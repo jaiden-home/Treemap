@@ -350,7 +350,7 @@
    * ================================================================ */
   var CSS = [
     '.tm-root{position:relative;width:100%;height:100%;overflow:hidden;user-select:none}',
-    '.tm-cell{position:absolute;border:1px solid transparent;cursor:pointer;overflow:hidden;animation:tmIn .4s ease both;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}',
+    '.tm-cell{position:absolute;cursor:pointer;overflow:hidden;animation:tmIn .4s ease both;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}',
     '.tm-cell:hover{filter:brightness(1.1);z-index:6;transform:translateY(-3px) scale(1.02);box-shadow:0 10px 26px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.22)}',
     '@keyframes tmIn{from{opacity:0}to{opacity:1}}',
     '.tm-lbl{position:absolute;inset:0;padding:4px 6px;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.65)}',
@@ -367,7 +367,7 @@
     '.tm-cell.tm-z .tm-nm{font-size:14px}',
     '.tm-cell.tm-z .tm-pv{font-size:12px}',
     '.tm-cell.tm-z .tm-ex{font-size:11px}',
-    '.tm-frame{position:absolute;border:1px solid transparent;border-radius:3px;pointer-events:none;z-index:4;overflow:hidden}',
+    '.tm-frame{position:absolute;border-radius:3px;pointer-events:none;z-index:4;overflow:hidden}',
     '.tm-frame-label{position:absolute;top:0;left:0;right:0;display:flex;gap:6px;align-items:center;padding:0 6px;pointer-events:auto;cursor:pointer;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.08)}',
     '.tm-frame-label:hover b{text-decoration:underline}',
     '.tm-frame-label b{font-size:11px;font-weight:700;letter-spacing:.5px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);white-space:nowrap}',
@@ -559,13 +559,12 @@
       frame.className = 'tm-frame';
       setBox(frame, r.x + g, r.y + g, r.w - g * 2, r.h - g * 2);
 
-      /* 框架底色随大类颜色（低透明 tint + 同色描边），使整组 visually 聚合为一个模块 */
+      /* 框架底色随大类颜色（低透明 tint），使整组 visually 聚合为一个模块 */
       var fRatio;
       try { fRatio = Math.max(0, Math.min(1, +opt.color(cat))); } catch (e) { fRatio = 0.5; }
       var fc = scaleRgb(fRatio);
       var rgba = 'rgba(' + fc[0] + ',' + fc[1] + ',' + fc[2] + ',';
       frame.style.background = rgba + '.15)';
-      frame.style.borderColor = rgba + '.45)';
 
       /* 标签恒定显示：窄框依次降级为「仅名称」「仅名称 + 小字号」 */
       var lb = document.createElement('div');

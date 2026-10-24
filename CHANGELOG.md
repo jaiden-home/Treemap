@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-10-25
+
+### Fixed
+
+- Group frame label colors now follow the child furthest from the color anchor
+  **on the group's own side of the anchor**: an up group highlights its
+  strongest gainer, a down group its steepest loser. Previously the label took
+  the overall extreme regardless of direction, so a mildly up category could
+  show a green label driven by its worst loser. Falls back to the overall
+  extreme when no child sits on the group's side.
+
 ## [1.0.0] - 2026-10-24
 
 First public release. Pre-1.0 development happened in a private workspace

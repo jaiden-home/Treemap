@@ -347,20 +347,34 @@ export default class Treemap {
     this._root.appendChild(frag);
   }
 
-  /** The child whose color ratio is furthest from the neutral anchor. */
+  /**
+   * The child whose color ratio is furthest from the neutral anchor, taken on
+   * the group's own side of the anchor: an "up" group highlights its strongest
+   * gainer, a "down" group its steepest loser. Falls back to the overall
+   * extreme when no child sits on the group's side.
+   */
   _extremeRatio(group) {
     const opt = this._opt;
-    let best = null,
-      bestDist = -1;
+    const gRatio = clamp01(safe(opt.color, group));
+    const side = gRatio > 0.5 ? 1 : gRatio < 0.5 ? -1 : 0;
+    let same = null,
+      sameDist = -1,
+      any = null,
+      anyDist = -1;
     for (const child of this._itemList(group)) {
       const ratio = clamp01(safe(opt.color, child));
       const dist = Math.abs(ratio - 0.5);
-      if (dist > bestDist + 1e-12 || (Math.abs(dist - bestDist) <= 1e-12 && ratio > best)) {
-        best = ratio;
-        bestDist = dist;
+      const beats = (b, d) => dist > d + 1e-12 || (Math.abs(dist - d) <= 1e-12 && ratio > b);
+      if (beats(any, anyDist)) {
+        any = ratio;
+        anyDist = dist;
+      }
+      if ((!side || Math.sign(ratio - 0.5) === side) && beats(same, sameDist)) {
+        same = ratio;
+        sameDist = dist;
       }
     }
-    return best;
+    return same !== null ? same : any;
   }
 
   _makeCell(item, gi, idx, r, zoomed, delay) {

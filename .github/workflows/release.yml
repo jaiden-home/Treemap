@@ -6,7 +6,8 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: write  # create the GitHub release
+  id-token: write  # npm provenance (OIDC)
 
 jobs:
   publish:

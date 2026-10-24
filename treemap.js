@@ -345,7 +345,7 @@
    * ================================================================ */
   var CSS = [
     '.tm-root{position:relative;width:100%;height:100%;overflow:hidden;user-select:none}',
-    '.tm-cell{position:absolute;border:1px solid rgba(11,14,20,.95);border-radius:3px;cursor:pointer;overflow:hidden;animation:tmIn .4s ease both}',
+    '.tm-cell{position:absolute;border:1px solid rgba(11,14,20,.95);cursor:pointer;overflow:hidden;animation:tmIn .4s ease both}',
     '.tm-cell:hover{filter:brightness(1.18);z-index:6}',
     '@keyframes tmIn{from{opacity:0}to{opacity:1}}',
     '.tm-lbl{position:absolute;inset:0;padding:4px 6px;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.65)}',
@@ -353,6 +353,7 @@
     '.tm-pv{font-size:10px;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums;line-height:1.35}',
     '.tm-ex{font-size:10px;color:rgba(255,255,255,.75);margin-top:5px;line-height:1.5}',
     '.tm-cell.tm-xs .tm-nm{font-size:9px}',
+    '.tm-cell.tm-z{border-radius:3px}',
     '.tm-cell.tm-z .tm-nm{font-size:14px}',
     '.tm-cell.tm-z .tm-pv{font-size:12px}',
     '.tm-cell.tm-z .tm-ex{font-size:11px}',
@@ -398,7 +399,7 @@
   var DEFAULTS = {
     area: 'n',            // 'n' | 'absPct' | fn(d) —— 面积编码，默认板块体量（成分股数）
     floor: 0.5,           // 面积权重下限
-    padding: 3,
+    padding: 0,
     labelHeight: 15,
     zoomable: true,
     layout: 'resquarify', // 'resquarify' | 'squarify'

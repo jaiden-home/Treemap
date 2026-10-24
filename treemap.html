@@ -37,7 +37,7 @@
   .hd-right { display: flex; align-items: flex-end; gap: 18px; }
   .legend { min-width: 190px; }
   .lg-title { font-size: 10px; color: var(--muted); margin-bottom: 4px; letter-spacing: 1px; }
-  .lg-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgb(27,120,50) 0%, rgb(108,147,110) 25%, rgb(172,172,172) 50%, rgb(198,124,113) 75%, rgb(207,67,57) 100%); }
+  .lg-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgb(0,100,0) 0%, rgb(101,137,90) 25%, rgb(172,172,172) 50%, rgb(206,115,114) 75%, rgb(220,20,60) 100%); }
   .lg-scale { display: flex; justify-content: space-between; font-size: 9px; color: var(--muted); margin-top: 3px; }
   .area-note { font-size: 10px; color: var(--muted); padding-bottom: 2px; white-space: nowrap; }
   #crumb { display: flex; align-items: center; gap: 10px; padding: 0 16px 8px; font-size: 12px; color: var(--muted); min-height: 27px; flex-wrap: wrap; }
@@ -49,6 +49,7 @@
   #crumbText b { color: var(--txt); font-size: 13px; }
   .up { color: var(--up); }
   .down { color: var(--down); }
+  .flat { color: #acacac; }
   main { flex: 1; padding: 0 16px 14px; min-height: 0; }
   #plot { position: relative; width: 100%; height: 100%; }
 </style>
@@ -61,11 +62,11 @@
   </div>
   <div class="hd-right">
     <div class="legend">
-      <div class="lg-title">颜色 = 涨股比 up / evalN</div>
+      <div class="lg-title">颜色 = 平均涨幅（±10% 封顶）</div>
       <div class="lg-bar"></div>
-      <div class="lg-scale"><span>0%</span><span>50%</span><span>100%</span></div>
+      <div class="lg-scale"><span>-10%</span><span>0</span><span>+10%</span></div>
     </div>
-    <div class="area-note">面积 = 成分股数（可切 |涨幅|）<br>颜色锚点 = 50% 涨股比 · 点击可放大</div>
+    <div class="area-note">面积 = 涨股比 up / n × 1000 + 1<br>涨幅 0 为中性灰 · 点击可放大</div>
   </div>
 </header>
 <div id="crumb">
@@ -86,7 +87,9 @@
   var data = window.HEATMAP_DATA;
   var m = data.meta;
 
-  function fmtPct(v) { return (v >= 0 ? '+' : '') + v.toFixed(2) + '%'; }
+  function fmtPct(v) { return (v > 0 ? '+' : '') + v.toFixed(2) + '%'; }
+
+  function pctClass(v) { return v > 0 ? 'up' : v < 0 ? 'down' : 'flat'; }
 
   function chrome(cat) {
     if (!cat) {
@@ -95,7 +98,7 @@
         ' 个子概念（提示：点击单元格放大对应大类，Esc 返回）';
     } else {
       backBtn.hidden = false;
-      crumbText.innerHTML = '<b>' + cat.name + '</b>　平均 <span class="' + (cat.avgPct >= 0 ? 'up' : 'down') + '">' +
+      crumbText.innerHTML = '<b>' + cat.name + '</b>　平均 <span class="' + pctClass(cat.avgPct) + '">' +
         fmtPct(cat.avgPct) + '</span>　涨股比 ' + cat.up + '/' + cat.evalN +
         '　领涨 ' + cat.leader.name + ' ' + fmtPct(cat.leader.pct);
     }

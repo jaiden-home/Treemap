@@ -196,9 +196,9 @@
       "sumN": 115,
       "up": 65,
       "sumUp": 65,
-      "avgPct": -0.01,
-      "weightedAvg": -0.01,
-      "dev": 0.0033
+      "avgPct": 0,
+      "weightedAvg": 0,
+      "dev": 0.0037
     },
     {
       "name": "传媒",

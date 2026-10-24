@@ -2,9 +2,10 @@
  * treemap.js v2.0.0 — 专业级零依赖矩形树图（热力图）引擎
  *
  * 设计原则（详见 report.md）：
- *  - 面积表达"板块体量"（默认成分股数 n，可切 |涨幅| 或自定义），不用 |涨幅| 误导强弱；
- *  - 颜色为 CIE LCh（HCL）感知均匀 diverging 色阶，锚点 = 50% 涨股比，红涨绿跌；
- *    两端点明度不同（红 L*=49 / 绿 L*=44），为色觉障碍者保留亮度冗余编码；
+ *  - 面积表达"涨势强弱"：涨股比 up/n × 1000 + 1，上涨占比越高格子越大（无数据回退 1）；
+ *  - 颜色为 CIE LCh（HCL）感知均匀 diverging 色阶，由平均涨幅驱动：
+ *    锚点 = 0%（中性灰），红涨绿跌，±10% 封顶（≥+10% 最红，≤-10% 最绿）；
+ *    两端点明度不同（红 L*=47 / 绿 L*=36），为色觉障碍者保留亮度冗余编码；
  *    全色阶对白字满足 WCAG AA（对比度 ≥ 4.5:1）；
  *  - 布局：squarify（与 d3.treemapSquarify.ratio(1) 数值等价，容差 <0.5px）
  *    + resquarify（数据更新时复用行划分，保持格子位置稳定）；
@@ -13,8 +14,8 @@
  * 用法（像 D3 一样）：
  *   var chart = Treemap('#chart')
  *     .data(heatmapData)            // { categories: [{ name, n, up, evalN, avgPct, leader, concepts: [...] }] }
- *     .area('n')                    // 'n' | 'absPct' | fn(d)  面积编码（默认 'n'）
- *     .color(function (d) { return d.evalN ? d.up / d.evalN : 0.5; })
+ *     .area(function (d) { return d.n ? d.up / d.n * 1000 + 1 : 1; }) // 面积编码（默认涨股比 up/n × 1000 + 1）
+ *     .color(function (d) { return Math.max(0, Math.min(1, ((d.avgPct || 0) + 10) / 20)); }) // 颜色编码（默认平均涨幅 ±10% 封顶）
  *     .layout('resquarify')         // 'resquarify'（默认）| 'squarify'
  *     .tooltip(fn | false)          // 默认 Tooltip 含 Wilson CI；false 关闭
  *     .zoomable(true)
@@ -103,9 +104,9 @@
    * 注：mid 提亮后白字对比度 ≈ 2:1，低于 WCAG AA（端点红绿仍满足）。
    */
   var SCALE = {
-    mid:   { L: 70.3, C: 0 }, // #ACACAC
-    red:   { L: 49, C: 66, H: 34 },
-    green: { L: 44, C: 52, H: 144 }
+    mid:   { L: 70.3, C: 0 },        // #ACACAC
+    red:   { L: 47, C: 78.5, H: 25.3 },  // #DC143C
+    green: { L: 36.2, C: 60.3, H: 136 }  // #006400
   };
 
   function scaleRgb(ratio) {
@@ -133,6 +134,66 @@
   /** 浅底判断：白字对比度 < 4.5:1（WCAG AA）时改用深色文字 */
   function isLightBg(rgb) {
     return contrastRatio(relativeLuminance(rgb[0], rgb[1], rgb[2]), 1) < 4.5;
+  }
+
+  /* ---------------- 标题栏配色：跟随模块内最红/最绿子格子 + 同色系字色 ---------------- */
+  var FRAME_FLAT = { bg: [125, 125, 125], fg: [200, 200, 200] }; // 0%：#7D7D7D 底 + #C8C8C8 字
+
+  /**
+   * 与背景同色系的字色：色相/色度取色系端点（饱和红/绿），沿明度双向扫描。
+   * 优先 WCAG AA 正文级 4.5:1（暗方向需 L*≥28 保色相）；
+   * 不可达时退 AA 大字级 3:1，取实际色度更高（色相更明显）的方向：深红/深绿 或 亮绿。
+   */
+  function sameHueFg(bg, pct) {
+    var end = pct >= 0 ? SCALE.red : SCALE.green;
+    var bgL = relativeLuminance(bg[0], bg[1], bg[2]);
+    var bgLabL = rgbToLab(bg[0], bg[1], bg[2]).L;
+
+    function scan(dir) { // dir=+1 向亮，-1 向暗
+      var first3 = null, first45 = null, L45 = 0;
+      for (var d = 1; d <= 100; d++) {
+        var L = bgLabL + dir * d;
+        if (L < 0) L = 0;
+        if (L > 100) L = 100;
+        var c = lchToRgbClamped(L, end.C, end.H);
+        var r = contrastRatio(relativeLuminance(c[0], c[1], c[2]), bgL);
+        if (!first3 && r >= 3) first3 = c;
+        if (!first45 && r >= 4.5) { first45 = c; L45 = L; break; }
+        if (L === 0 || L === 100) break;
+      }
+      return { first3: first3, first45: first45, L45: L45 };
+    }
+    function chroma(list) { // 取实际 Lab 色度最高的候选（色相最明显）
+      var best = list[0], bestC = -1;
+      list.forEach(function (c) {
+        var lab = rgbToLab(c[0], c[1], c[2]);
+        var C = Math.sqrt(lab.a * lab.a + lab.b * lab.b);
+        if (C > bestC) { bestC = C; best = c; }
+      });
+      return best;
+    }
+
+    var upR = scan(1), dnR = scan(-1);
+    var cand45 = [];
+    if (upR.first45) cand45.push(upR.first45);
+    if (dnR.first45 && dnR.L45 >= 28) cand45.push(dnR.first45);
+    if (cand45.length) return chroma(cand45); // AA 正文级
+    var cand3 = [];
+    if (upR.first3) cand3.push(upR.first3);
+    if (dnR.first3) cand3.push(dnR.first3);
+    if (cand3.length) return chroma(cand3);   // AA 大字级，保色相
+    return contrastRatio(1, bgL) >= 4.5 ? [255, 255, 255] : [0, 0, 0];
+  }
+
+  /**
+   * 标题栏配色：extremePct = 该大类下最红（涨时）或最绿（跌时）子概念的 avgPct，
+   * 背景与其格子颜色一致；0 为 #7D7D7D 底 + #C8C8C8 字特例。
+   */
+  function frameColors(extremePct) {
+    var pct = extremePct || 0;
+    if (pct === 0) return { bg: FRAME_FLAT.bg.slice(), fg: FRAME_FLAT.fg.slice(), dark: false };
+    var bg = scaleRgb(Math.max(0, Math.min(1, (pct + 10) / 20)));
+    return { bg: bg, fg: sameHueFg(bg, pct), dark: isLightBg(bg) };
   }
 
   /* ---------------- 色觉障碍模拟（Machado et al. 2009, severity=1.0, 线性 RGB 域） ---------------- */
@@ -370,15 +431,13 @@
     '.tm-frame{position:absolute;border-radius:3px;pointer-events:none;z-index:4;overflow:hidden}',
     '.tm-frame-label{position:absolute;top:0;left:0;right:0;display:flex;gap:6px;align-items:center;padding:0 6px;pointer-events:auto;cursor:pointer;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.08)}',
     '.tm-frame-label:hover b{text-decoration:underline}',
-    '.tm-frame-label b{font-size:11px;font-weight:700;letter-spacing:.5px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);white-space:nowrap}',
+    '.tm-frame-label b{font-size:11px;font-weight:700;letter-spacing:.5px;color:inherit;text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap}',
     '.tm-frame-label span{font-size:9px;font-variant-numeric:tabular-nums;text-shadow:0 1px 3px rgba(0,0,0,.8);white-space:nowrap}',
     '.tm-frame-label.tm-fl-c span{display:none}',
     '.tm-frame-label.tm-fl-xs span{display:none}',
     '.tm-frame-label.tm-fl-xs b{font-size:9px;letter-spacing:.2px}',
-    '.tm-frame-label.tm-dk b{color:#14181f;text-shadow:0 1px 2px rgba(255,255,255,.55)}',
+    '.tm-frame-label.tm-dk b{text-shadow:0 1px 2px rgba(255,255,255,.55)}',
     '.tm-frame-label.tm-dk span{text-shadow:0 1px 2px rgba(255,255,255,.55)}',
-    '.tm-frame-label.tm-dk .tm-up{color:#b93a2b !important}',
-    '.tm-frame-label.tm-dk .tm-down{color:#157347 !important}',
     '.tm-tip{position:fixed;z-index:1000;pointer-events:none;background:rgba(15,18,26,.97);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.6;box-shadow:0 8px 30px rgba(0,0,0,.55);max-width:300px;color:#e8eaed;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif}',
     '.tm-tip .tm-tt{font-weight:700;font-size:13px;margin-bottom:6px;display:flex;align-items:baseline;gap:8px}',
     '.tm-tip .tm-tc{font-size:10px;color:#9aa0aa;font-weight:400}',
@@ -411,13 +470,13 @@
    * 默认配置
    * ================================================================ */
   var DEFAULTS = {
-    area: 'n',            // 'n' | 'absPct' | fn(d) —— 面积编码，默认板块体量（成分股数）
+    area: function (d) { return d.n ? (d.up || 0) / d.n * 1000 + 1 : 1; }, // 面积 = 涨股比 up/n × 1000 + 1（无数据回退 1）
     floor: 0.5,           // 面积权重下限
     padding: 0,
     labelHeight: 15,
     zoomable: true,
     layout: 'resquarify', // 'resquarify' | 'squarify'
-    color: function (d) { return d.evalN ? d.up / d.evalN : 0.5; },
+    color: function (d) { return Math.max(0, Math.min(1, ((d.avgPct || 0) + 10) / 20)); }, // 颜色 = 平均涨幅，[-10%,+10%] → [0,1]，0 为灰
     conceptSort: function (a, b) { return (b.avgPct || 0) - (a.avgPct || 0); },
     tooltip: defaultTooltip
   };
@@ -566,17 +625,29 @@
       var rgba = 'rgba(' + fc[0] + ',' + fc[1] + ',' + fc[2] + ',';
       frame.style.background = rgba + '.15)';
 
-      /* 标签恒定显示：窄框依次降级为「仅名称」「仅名称 + 小字号」 */
+      /* 标题恒定显示：窄框依次降级为「仅名称」「仅名称 + 小字号」 */
       var lb = document.createElement('div');
       lb.className = 'tm-frame-label' + (r.w < 56 || r.h < 26 ? ' tm-fl-xs' : r.w < 100 ? ' tm-fl-c' : '');
       lb.dataset.c = ci;
       lb.title = '点击放大「' + cat.name + '」';
       lb.style.height = opt.labelHeight + 'px';
-      lb.style.background = 'rgb(' + fc[0] + ',' + fc[1] + ',' + fc[2] + ')';
-      if (isLightBg(fc)) lb.className += ' tm-dk'; // 浅底标题栏改用深色文字
+
+      /* 标题栏配色：背景 = 模块内最红（大类涨时）或最绿（大类跌时）子格子的颜色；
+         0% 为深灰特例；字色与背景同色系并保证对比度 */
+      var catPct = typeof cat.avgPct === 'number' ? cat.avgPct : 0;
+      var exPct = 0;
+      (cat.concepts || []).forEach(function (c) {
+        if (typeof c.avgPct !== 'number') return;
+        if (catPct > 0) { if (c.avgPct > exPct) exPct = c.avgPct; }
+        else if (catPct < 0) { if (c.avgPct < exPct) exPct = c.avgPct; }
+      });
+      var fcol = frameColors(exPct);
+      lb.style.background = 'rgb(' + fcol.bg.join(',') + ')';
+      lb.style.color = 'rgb(' + fcol.fg.join(',') + ')';
+      if (fcol.dark) lb.className += ' tm-dk';
       lb.innerHTML = '<b>' + cat.name + '</b>' +
         (typeof cat.avgPct === 'number'
-          ? '<span class="' + (cat.avgPct >= 0 ? 'tm-up' : 'tm-down') + '">' + fmtPct(cat.avgPct) + '</span>'
+          ? '<span>' + fmtPct(cat.avgPct) + '</span>'
           : '');
       frame.appendChild(lb);
       frameFrag.appendChild(frame);
@@ -737,6 +808,7 @@
     wilson: wilson,
     colorFor: colorFor,
     scaleRgb: scaleRgb,
+    frameColors: frameColors,
     SCALE: SCALE,
     rgbToLab: rgbToLab,
     labToRgb: labToRgb,

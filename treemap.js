@@ -98,12 +98,12 @@
   }
 
   /**
-   * diverging 色阶：锚点 0.5（中性暗灰），右支红（涨），左支绿（跌）。
+   * diverging 色阶：锚点 0.5（#ACACAC 中性灰），右支红（涨），左支绿（跌）。
    * 在 LCh 空间沿固定色相线性插值 L/C —— Lab 线性即感知均匀。
-   * 端点参数经 WCAG AA 与色盲模拟验证（见 test/run-tests.js、report.md）。
+   * 注：mid 提亮后白字对比度 ≈ 2:1，低于 WCAG AA（端点红绿仍满足）。
    */
   var SCALE = {
-    mid:   { L: 22, C: 4 },
+    mid:   { L: 70.3, C: 0 }, // #ACACAC
     red:   { L: 49, C: 66, H: 34 },
     green: { L: 44, C: 52, H: 144 }
   };
@@ -128,6 +128,11 @@
   function contrastRatio(l1, l2) {
     var hi = Math.max(l1, l2), lo = Math.min(l1, l2);
     return (hi + 0.05) / (lo + 0.05);
+  }
+
+  /** 浅底判断：白字对比度 < 4.5:1（WCAG AA）时改用深色文字 */
+  function isLightBg(rgb) {
+    return contrastRatio(relativeLuminance(rgb[0], rgb[1], rgb[2]), 1) < 4.5;
   }
 
   /* ---------------- 色觉障碍模拟（Machado et al. 2009, severity=1.0, 线性 RGB 域） ---------------- */
@@ -345,14 +350,19 @@
    * ================================================================ */
   var CSS = [
     '.tm-root{position:relative;width:100%;height:100%;overflow:hidden;user-select:none}',
-    '.tm-cell{position:absolute;border:1px solid rgba(11,14,20,.95);cursor:pointer;overflow:hidden;animation:tmIn .4s ease both}',
-    '.tm-cell:hover{filter:brightness(1.18);z-index:6}',
+    '.tm-cell{position:absolute;border:1px solid rgba(11,14,20,.95);cursor:pointer;overflow:hidden;animation:tmIn .4s ease both;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}',
+    '.tm-cell:hover{filter:brightness(1.1);z-index:6;transform:translateY(-3px) scale(1.02);box-shadow:0 10px 26px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.22)}',
     '@keyframes tmIn{from{opacity:0}to{opacity:1}}',
     '.tm-lbl{position:absolute;inset:0;padding:4px 6px;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.65)}',
     '.tm-nm{font-size:11px;font-weight:600;color:rgba(255,255,255,.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}',
     '.tm-pv{font-size:10px;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums;line-height:1.35}',
     '.tm-ex{font-size:10px;color:rgba(255,255,255,.75);margin-top:5px;line-height:1.5}',
-    '.tm-cell.tm-xs .tm-nm{font-size:9px}',
+    '.tm-cell.tm-dk .tm-lbl{text-shadow:0 1px 3px rgba(255,255,255,.5)}',
+    '.tm-cell.tm-dk .tm-nm{color:rgba(16,20,26,.92)}',
+    '.tm-cell.tm-dk .tm-pv{color:rgba(16,20,26,.85)}',
+    '.tm-cell.tm-dk .tm-ex{color:rgba(16,20,26,.78)}',
+    '.tm-cell.tm-xs .tm-lbl{padding:0 2px}',
+    '.tm-cell.tm-xs .tm-nm{font-size:9px;line-height:1.3}',
     '.tm-cell.tm-z{border-radius:3px}',
     '.tm-cell.tm-z .tm-nm{font-size:14px}',
     '.tm-cell.tm-z .tm-pv{font-size:12px}',
@@ -365,6 +375,10 @@
     '.tm-frame-label.tm-fl-c span{display:none}',
     '.tm-frame-label.tm-fl-xs span{display:none}',
     '.tm-frame-label.tm-fl-xs b{font-size:9px;letter-spacing:.2px}',
+    '.tm-frame-label.tm-dk b{color:#14181f;text-shadow:0 1px 2px rgba(255,255,255,.55)}',
+    '.tm-frame-label.tm-dk span{text-shadow:0 1px 2px rgba(255,255,255,.55)}',
+    '.tm-frame-label.tm-dk .tm-up{color:#b93a2b !important}',
+    '.tm-frame-label.tm-dk .tm-down{color:#157347 !important}',
     '.tm-tip{position:fixed;z-index:1000;pointer-events:none;background:rgba(15,18,26,.97);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.6;box-shadow:0 8px 30px rgba(0,0,0,.55);max-width:300px;color:#e8eaed;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif}',
     '.tm-tip .tm-tt{font-weight:700;font-size:13px;margin-bottom:6px;display:flex;align-items:baseline;gap:8px}',
     '.tm-tip .tm-tc{font-size:10px;color:#9aa0aa;font-weight:400}',
@@ -560,6 +574,7 @@
       lb.title = '点击放大「' + cat.name + '」';
       lb.style.height = opt.labelHeight + 'px';
       lb.style.background = 'rgb(' + fc[0] + ',' + fc[1] + ',' + fc[2] + ')';
+      if (isLightBg(fc)) lb.className += ' tm-dk'; // 浅底标题栏改用深色文字
       lb.innerHTML = '<b>' + cat.name + '</b>' +
         (typeof cat.avgPct === 'number'
           ? '<span class="' + (cat.avgPct >= 0 ? 'tm-up' : 'tm-down') + '">' + fmtPct(cat.avgPct) + '</span>'
@@ -567,7 +582,7 @@
       frame.appendChild(lb);
       frameFrag.appendChild(frame);
 
-      var off = opt.labelHeight;
+      var off = opt.labelHeight + 1; // 标题栏与小模块之间留 1px 间隙
       var ix = r.x + g + opt.padding, iy = r.y + g + opt.padding + off;
       var iw = r.w - (g + opt.padding) * 2, ih = r.h - (g + opt.padding) * 2 - off;
       if (iw < 4 || ih < 4) return;
@@ -616,7 +631,9 @@
 
     var ratio;
     try { ratio = Math.max(0, Math.min(1, +this._opt.color(cp))); } catch (e) { ratio = 0.5; }
-    el.style.background = colorFor(ratio);
+    var bg = scaleRgb(ratio);
+    el.style.background = 'rgb(' + bg[0] + ',' + bg[1] + ',' + bg[2] + ')';
+    if (isLightBg(bg)) el.className += ' tm-dk'; // 浅底格子改用深色文字
     el.style.animationDelay = Math.min(delay * 3, 320) + 'ms';
 
     var html = '', t = 0;
@@ -626,7 +643,7 @@
       else if (r.w >= 52 && r.h >= 26) t = 1;
     } else {
       if (r.w >= 66 && r.h >= 44) t = 2;
-      else if (r.w >= 46 && r.h >= 22) t = 1;
+      else if (r.w >= 12 && r.h >= 12) t = 1; // 尽量显示：放不下就省略号截断，避免空白格子
       if (t === 1 && r.w < 62) el.classList.add('tm-xs');
     }
     if (t >= 1) html += '<div class="tm-nm">' + cp.name + '</div>';

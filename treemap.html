@@ -1,0 +1,2458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>概念板块热力图 · Treemap</title>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --line: rgba(255,255,255,.14);
+    --txt: #e8eaed;
+    --muted: #9aa0aa;
+    --up: #ff6b6b;
+    --down: #4ade80;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--txt);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+    padding: 12px 16px 8px; flex-wrap: wrap;
+  }
+  h1 { font-size: 17px; font-weight: 700; letter-spacing: .5px; }
+  h1 .en { margin-left: 8px; font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
+  .meta { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+  .meta span {
+    font-size: 11px; color: var(--muted);
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.07);
+    padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+  }
+  .hd-right { display: flex; align-items: flex-end; gap: 18px; }
+  .legend { min-width: 190px; }
+  .lg-title { font-size: 10px; color: var(--muted); margin-bottom: 4px; letter-spacing: 1px; }
+  .lg-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgb(27,120,50) 0%, rgb(47,86,51) 25%, rgb(59,51,49) 50%, rgb(132,63,54) 75%, rgb(207,67,57) 100%); }
+  .lg-scale { display: flex; justify-content: space-between; font-size: 9px; color: var(--muted); margin-top: 3px; }
+  .area-note { font-size: 10px; color: var(--muted); padding-bottom: 2px; white-space: nowrap; }
+  #crumb { display: flex; align-items: center; gap: 10px; padding: 0 16px 8px; font-size: 12px; color: var(--muted); min-height: 27px; flex-wrap: wrap; }
+  #backBtn {
+    background: rgba(255,255,255,.08); color: var(--txt); border: 1px solid var(--line);
+    border-radius: 6px; font-size: 11px; padding: 3px 10px; cursor: pointer; font-family: inherit;
+  }
+  #backBtn:hover { background: rgba(255,255,255,.16); }
+  #crumbText b { color: var(--txt); font-size: 13px; }
+  .up { color: var(--up); }
+  .down { color: var(--down); }
+  main { flex: 1; padding: 0 16px 14px; min-height: 0; }
+  #plot { position: relative; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>概念板块热力图<span class="en">Treemap</span></h1>
+    <div class="meta" id="meta"></div>
+  </div>
+  <div class="hd-right">
+    <div class="legend">
+      <div class="lg-title">颜色 = 涨股比 up / evalN</div>
+      <div class="lg-bar"></div>
+      <div class="lg-scale"><span>0%</span><span>50%</span><span>100%</span></div>
+    </div>
+    <div class="area-note">面积 = 成分股数（可切 |涨幅|）<br>颜色锚点 = 50% 涨股比 · 点击可放大</div>
+  </div>
+</header>
+<div id="crumb">
+  <button id="backBtn" hidden>← 返回全部大类</button>
+  <span id="crumbText"></span>
+</div>
+<main><div id="plot"></div></main>
+
+<script type="application/json" id="fallback">
+{
+  "meta": {
+    "lastDate": "2026-10-23",
+    "prevDate": "2026-10-22",
+    "exportedAt": "2026-10-23T15:06:20.951Z",
+    "stocksEvaluated": 4416,
+    "categories": 31,
+    "concepts": 144,
+    "note": "两级概念热力（大类 → 子概念，一股一概念）：面积=avgPct 当日等权平均涨幅，颜色=up/evalN 涨股比，leader=成分涨幅第一；大类按 concepts.sort 展示序、子概念按 avgPct 降序"
+  },
+  "categories": [
+    {
+      "name": "半导体",
+      "n": 72,
+      "up": 62,
+      "evalN": 72,
+      "avgPct": 2.47,
+      "leader": {
+        "code": "301269",
+        "name": "华大九天",
+        "pct": 10.97
+      },
+      "concepts": [
+        {
+          "code": "半导体",
+          "name": "半导体",
+          "n": 50,
+          "up": 44,
+          "evalN": 50,
+          "avgPct": 2.92,
+          "leader": {
+            "code": "301269",
+            "name": "华大九天",
+            "pct": 10.97
+          }
+        },
+        {
+          "code": "半导体设备",
+          "name": "半导体设备",
+          "n": 16,
+          "up": 13,
+          "evalN": 16,
+          "avgPct": 1.52,
+          "leader": {
+            "code": "300480",
+            "name": "光力科技",
+            "pct": 6.47
+          }
+        },
+        {
+          "code": "第三代半导体",
+          "name": "第三代半导体",
+          "n": 6,
+          "up": 5,
+          "evalN": 6,
+          "avgPct": 1.22,
+          "leader": {
+            "code": "603005",
+            "name": "晶方科技",
+            "pct": 3.55
+          }
+        }
+      ]
+    },
+    {
+      "name": "芯片",
+      "n": 88,
+      "up": 63,
+      "evalN": 88,
+      "avgPct": 1.35,
+      "leader": {
+        "code": "301707",
+        "name": "展芯股份",
+        "pct": 11.33
+      },
+      "concepts": [
+        {
+          "code": "芯片",
+          "name": "芯片",
+          "n": 22,
+          "up": 21,
+          "evalN": 22,
+          "avgPct": 4.38,
+          "leader": {
+            "code": "301707",
+            "name": "展芯股份",
+            "pct": 11.33
+          }
+        },
+        {
+          "code": "存储芯片",
+          "name": "存储芯片",
+          "n": 10,
+          "up": 10,
+          "evalN": 10,
+          "avgPct": 4.06,
+          "leader": {
+            "code": "301666",
+            "name": "大普微",
+            "pct": 9.63
+          }
+        },
+        {
+          "code": "PCB",
+          "name": "PCB",
+          "n": 56,
+          "up": 32,
+          "evalN": 56,
+          "avgPct": -0.32,
+          "leader": {
+            "code": "001232",
+            "name": "嘉立创",
+            "pct": 7.43
+          }
+        }
+      ]
+    },
+    {
+      "name": "消费电子",
+      "n": 175,
+      "up": 156,
+      "evalN": 175,
+      "avgPct": 2.88,
+      "leader": {
+        "code": "300296",
+        "name": "利亚德",
+        "pct": 20
+      },
+      "concepts": [
+        {
+          "code": "整机与品牌",
+          "name": "整机与品牌",
+          "n": 45,
+          "up": 44,
+          "evalN": 45,
+          "avgPct": 3.84,
+          "leader": {
+            "code": "002241",
+            "name": "歌尔股份",
+            "pct": 10
+          }
+        },
+        {
+          "code": "消费电子零部件",
+          "name": "消费电子零部件",
+          "n": 65,
+          "up": 57,
+          "evalN": 65,
+          "avgPct": 2.66,
+          "leader": {
+            "code": "300115",
+            "name": "长盈精密",
+            "pct": 14.82
+          }
+        },
+        {
+          "code": "显示与LED",
+          "name": "显示与LED",
+          "n": 65,
+          "up": 55,
+          "evalN": 65,
+          "avgPct": 2.43,
+          "leader": {
+            "code": "300296",
+            "name": "利亚德",
+            "pct": 20
+          }
+        }
+      ]
+    },
+    {
+      "name": "人工智能",
+      "n": 83,
+      "up": 72,
+      "evalN": 83,
+      "avgPct": 2.25,
+      "leader": {
+        "code": "002354",
+        "name": "天娱数科",
+        "pct": 10
+      },
+      "concepts": [
+        {
+          "code": "算力",
+          "name": "算力",
+          "n": 21,
+          "up": 18,
+          "evalN": 21,
+          "avgPct": 2.89,
+          "leader": {
+            "code": "002354",
+            "name": "天娱数科",
+            "pct": 10
+          }
+        },
+        {
+          "code": "数据中心",
+          "name": "数据中心",
+          "n": 32,
+          "up": 30,
+          "evalN": 32,
+          "avgPct": 2.39,
+          "leader": {
+            "code": "300499",
+            "name": "高澜股份",
+            "pct": 6.07
+          }
+        },
+        {
+          "code": "人工智能",
+          "name": "人工智能",
+          "n": 11,
+          "up": 9,
+          "evalN": 11,
+          "avgPct": 2.38,
+          "leader": {
+            "code": "300229",
+            "name": "拓尔思",
+            "pct": 6.07
+          }
+        },
+        {
+          "code": "光通信",
+          "name": "光通信",
+          "n": 19,
+          "up": 15,
+          "evalN": 19,
+          "avgPct": 1.21,
+          "leader": {
+            "code": "603803",
+            "name": "瑞斯康达",
+            "pct": 5.03
+          }
+        }
+      ]
+    },
+    {
+      "name": "软件",
+      "n": 175,
+      "up": 153,
+      "evalN": 175,
+      "avgPct": 3.5,
+      "leader": {
+        "code": "301313",
+        "name": "凡拓数创",
+        "pct": 20
+      },
+      "concepts": [
+        {
+          "code": "网络安全",
+          "name": "网络安全",
+          "n": 11,
+          "up": 9,
+          "evalN": 11,
+          "avgPct": 5.81,
+          "leader": {
+            "code": "300369",
+            "name": "绿盟科技",
+            "pct": 19.98
+          }
+        },
+        {
+          "code": "企业管理软件",
+          "name": "企业管理软件",
+          "n": 10,
+          "up": 10,
+          "evalN": 10,
+          "avgPct": 5.77,
+          "leader": {
+            "code": "603171",
+            "name": "税友股份",
+            "pct": 10
+          }
+        },
+        {
+          "code": "工业软件",
+          "name": "工业软件",
+          "n": 13,
+          "up": 12,
+          "evalN": 13,
+          "avgPct": 4.74,
+          "leader": {
+            "code": "300687",
+            "name": "赛意信息",
+            "pct": 14.35
+          }
+        },
+        {
+          "code": "互联网",
+          "name": "互联网",
+          "n": 19,
+          "up": 18,
+          "evalN": 19,
+          "avgPct": 4.07,
+          "leader": {
+            "code": "301428",
+            "name": "世纪恒通",
+            "pct": 20
+          }
+        },
+        {
+          "code": "IT服务与外包",
+          "name": "IT服务与外包",
+          "n": 24,
+          "up": 22,
+          "evalN": 24,
+          "avgPct": 3.92,
+          "leader": {
+            "code": "301313",
+            "name": "凡拓数创",
+            "pct": 20
+          }
+        },
+        {
+          "code": "垂直行业IT",
+          "name": "垂直行业IT",
+          "n": 30,
+          "up": 25,
+          "evalN": 30,
+          "avgPct": 3.43,
+          "leader": {
+            "code": "301162",
+            "name": "国能日新",
+            "pct": 10.29
+          }
+        },
+        {
+          "code": "智慧城市",
+          "name": "智慧城市",
+          "n": 18,
+          "up": 14,
+          "evalN": 18,
+          "avgPct": 2.5,
+          "leader": {
+            "code": "002474",
+            "name": "榕基软件",
+            "pct": 10.06
+          }
+        },
+        {
+          "code": "物联网",
+          "name": "物联网",
+          "n": 37,
+          "up": 32,
+          "evalN": 37,
+          "avgPct": 2.27,
+          "leader": {
+            "code": "002421",
+            "name": "达实智能",
+            "pct": 9.94
+          }
+        },
+        {
+          "code": "大数据",
+          "name": "大数据",
+          "n": 13,
+          "up": 11,
+          "evalN": 13,
+          "avgPct": 2.03,
+          "leader": {
+            "code": "300250",
+            "name": "初灵信息",
+            "pct": 5.04
+          }
+        }
+      ]
+    },
+    {
+      "name": "国产替代",
+      "n": 49,
+      "up": 41,
+      "evalN": 49,
+      "avgPct": 1.58,
+      "leader": {
+        "code": "603559",
+        "name": "中通国脉",
+        "pct": 6.33
+      },
+      "concepts": [
+        {
+          "code": "华为概念",
+          "name": "华为概念",
+          "n": 7,
+          "up": 7,
+          "evalN": 7,
+          "avgPct": 3.96,
+          "leader": {
+            "code": "301236",
+            "name": "软通动力",
+            "pct": 5.37
+          }
+        },
+        {
+          "code": "5G概念",
+          "name": "5G概念",
+          "n": 42,
+          "up": 34,
+          "evalN": 42,
+          "avgPct": 1.18,
+          "leader": {
+            "code": "603559",
+            "name": "中通国脉",
+            "pct": 6.33
+          }
+        }
+      ]
+    },
+    {
+      "name": "智能制造",
+      "n": 203,
+      "up": 191,
+      "evalN": 203,
+      "avgPct": 3.83,
+      "leader": {
+        "code": "301083",
+        "name": "百胜智能",
+        "pct": 14.76
+      },
+      "concepts": [
+        {
+          "code": "工业机器人",
+          "name": "工业机器人",
+          "n": 54,
+          "up": 49,
+          "evalN": 54,
+          "avgPct": 5.35,
+          "leader": {
+            "code": "300466",
+            "name": "赛摩智能",
+            "pct": 10.37
+          }
+        },
+        {
+          "code": "智能装备",
+          "name": "智能装备",
+          "n": 58,
+          "up": 55,
+          "evalN": 58,
+          "avgPct": 3.38,
+          "leader": {
+            "code": "603081",
+            "name": "大丰实业",
+            "pct": 10.02
+          }
+        },
+        {
+          "code": "智能交通",
+          "name": "智能交通",
+          "n": 45,
+          "up": 43,
+          "evalN": 45,
+          "avgPct": 3.32,
+          "leader": {
+            "code": "301083",
+            "name": "百胜智能",
+            "pct": 14.76
+          }
+        },
+        {
+          "code": "机床与激光",
+          "name": "机床与激光",
+          "n": 26,
+          "up": 25,
+          "evalN": 26,
+          "avgPct": 3.19,
+          "leader": {
+            "code": "300503",
+            "name": "昊志机电",
+            "pct": 11.37
+          }
+        },
+        {
+          "code": "重型装备",
+          "name": "重型装备",
+          "n": 20,
+          "up": 19,
+          "evalN": 20,
+          "avgPct": 2.99,
+          "leader": {
+            "code": "600215",
+            "name": "派斯林",
+            "pct": 10.07
+          }
+        }
+      ]
+    },
+    {
+      "name": "消费",
+      "n": 423,
+      "up": 342,
+      "evalN": 423,
+      "avgPct": 1.51,
+      "leader": {
+        "code": "301502",
+        "name": "华阳智能",
+        "pct": 20
+      },
+      "concepts": [
+        {
+          "code": "白酒",
+          "name": "白酒",
+          "n": 20,
+          "up": 19,
+          "evalN": 20,
+          "avgPct": 2.57,
+          "leader": {
+            "code": "603919",
+            "name": "金徽酒",
+            "pct": 6.59
+          }
+        },
+        {
+          "code": "新零售",
+          "name": "新零售",
+          "n": 71,
+          "up": 65,
+          "evalN": 71,
+          "avgPct": 2.33,
+          "leader": {
+            "code": "600838",
+            "name": "上海九百",
+            "pct": 10
+          }
+        },
+        {
+          "code": "家电",
+          "name": "家电",
+          "n": 91,
+          "up": 75,
+          "evalN": 91,
+          "avgPct": 2.01,
+          "leader": {
+            "code": "301502",
+            "name": "华阳智能",
+            "pct": 20
+          }
+        },
+        {
+          "code": "美妆个护",
+          "name": "美妆个护",
+          "n": 20,
+          "up": 18,
+          "evalN": 20,
+          "avgPct": 1.91,
+          "leader": {
+            "code": "001328",
+            "name": "登康口腔",
+            "pct": 10.02
+          }
+        },
+        {
+          "code": "鸡肉",
+          "name": "鸡肉",
+          "n": 10,
+          "up": 8,
+          "evalN": 10,
+          "avgPct": 1.66,
+          "leader": {
+            "code": "002982",
+            "name": "湘佳股份",
+            "pct": 10.02
+          }
+        },
+        {
+          "code": "啤酒",
+          "name": "啤酒",
+          "n": 7,
+          "up": 6,
+          "evalN": 7,
+          "avgPct": 1.48,
+          "leader": {
+            "code": "000729",
+            "name": "燕京啤酒",
+            "pct": 4.21
+          }
+        },
+        {
+          "code": "休闲食品",
+          "name": "休闲食品",
+          "n": 13,
+          "up": 11,
+          "evalN": 13,
+          "avgPct": 1.48,
+          "leader": {
+            "code": "002847",
+            "name": "盐津铺子",
+            "pct": 4.28
+          }
+        },
+        {
+          "code": "调味品",
+          "name": "调味品",
+          "n": 15,
+          "up": 10,
+          "evalN": 15,
+          "avgPct": 1.18,
+          "leader": {
+            "code": "300908",
+            "name": "仲景食品",
+            "pct": 6.69
+          }
+        },
+        {
+          "code": "乳业/饮料",
+          "name": "乳业/饮料",
+          "n": 29,
+          "up": 23,
+          "evalN": 29,
+          "avgPct": 1.04,
+          "leader": {
+            "code": "600419",
+            "name": "天润乳业",
+            "pct": 8.23
+          }
+        },
+        {
+          "code": "食品加工",
+          "name": "食品加工",
+          "n": 64,
+          "up": 49,
+          "evalN": 64,
+          "avgPct": 1.02,
+          "leader": {
+            "code": "000972",
+            "name": "中基健康",
+            "pct": 10.03
+          }
+        },
+        {
+          "code": "珠宝首饰",
+          "name": "珠宝首饰",
+          "n": 13,
+          "up": 11,
+          "evalN": 13,
+          "avgPct": 0.98,
+          "leader": {
+            "code": "301177",
+            "name": "迪阿股份",
+            "pct": 2.58
+          }
+        },
+        {
+          "code": "跨境/免税",
+          "name": "跨境/免税",
+          "n": 17,
+          "up": 14,
+          "evalN": 17,
+          "avgPct": 0.89,
+          "leader": {
+            "code": "002315",
+            "name": "焦点科技",
+            "pct": 6.88
+          }
+        },
+        {
+          "code": "体育户外",
+          "name": "体育户外",
+          "n": 16,
+          "up": 13,
+          "evalN": 16,
+          "avgPct": 0.8,
+          "leader": {
+            "code": "300005",
+            "name": "探路者",
+            "pct": 4.04
+          }
+        },
+        {
+          "code": "猪肉",
+          "name": "猪肉",
+          "n": 25,
+          "up": 14,
+          "evalN": 25,
+          "avgPct": 0.29,
+          "leader": {
+            "code": "603151",
+            "name": "邦基科技",
+            "pct": 1.9
+          }
+        },
+        {
+          "code": "水产养殖",
+          "name": "水产养殖",
+          "n": 12,
+          "up": 6,
+          "evalN": 12,
+          "avgPct": -0.48,
+          "leader": {
+            "code": "002696",
+            "name": "百洋股份",
+            "pct": 4.49
+          }
+        }
+      ]
+    },
+    {
+      "name": "文化娱乐",
+      "n": 120,
+      "up": 93,
+      "evalN": 120,
+      "avgPct": 2.47,
+      "leader": {
+        "code": "300031",
+        "name": "宝通科技",
+        "pct": 14.42
+      },
+      "concepts": [
+        {
+          "code": "游戏",
+          "name": "游戏",
+          "n": 24,
+          "up": 22,
+          "evalN": 24,
+          "avgPct": 3.63,
+          "leader": {
+            "code": "300031",
+            "name": "宝通科技",
+            "pct": 14.42
+          }
+        },
+        {
+          "code": "影视",
+          "name": "影视",
+          "n": 19,
+          "up": 16,
+          "evalN": 19,
+          "avgPct": 3.35,
+          "leader": {
+            "code": "002343",
+            "name": "慈文传媒",
+            "pct": 10
+          }
+        },
+        {
+          "code": "文化传媒",
+          "name": "文化传媒",
+          "n": 77,
+          "up": 55,
+          "evalN": 77,
+          "avgPct": 1.9,
+          "leader": {
+            "code": "301052",
+            "name": "果麦文化",
+            "pct": 11.95
+          }
+        }
+      ]
+    },
+    {
+      "name": "生活服务",
+      "n": 16,
+      "up": 13,
+      "evalN": 16,
+      "avgPct": 1.63,
+      "leader": {
+        "code": "300645",
+        "name": "正元智慧",
+        "pct": 3.87
+      },
+      "concepts": [
+        {
+          "code": "教育",
+          "name": "教育",
+          "n": 16,
+          "up": 13,
+          "evalN": 16,
+          "avgPct": 1.63,
+          "leader": {
+            "code": "300645",
+            "name": "正元智慧",
+            "pct": 3.87
+          }
+        }
+      ]
+    },
+    {
+      "name": "创新药",
+      "n": 179,
+      "up": 140,
+      "evalN": 179,
+      "avgPct": 1.25,
+      "leader": {
+        "code": "300584",
+        "name": "海辰药业",
+        "pct": 20.01
+      },
+      "concepts": [
+        {
+          "code": "创新药",
+          "name": "创新药",
+          "n": 26,
+          "up": 22,
+          "evalN": 26,
+          "avgPct": 2.42,
+          "leader": {
+            "code": "300584",
+            "name": "海辰药业",
+            "pct": 20.01
+          }
+        },
+        {
+          "code": "生物制品",
+          "name": "生物制品",
+          "n": 26,
+          "up": 22,
+          "evalN": 26,
+          "avgPct": 1.44,
+          "leader": {
+            "code": "603087",
+            "name": "甘李药业",
+            "pct": 7.46
+          }
+        },
+        {
+          "code": "化学制药",
+          "name": "化学制药",
+          "n": 59,
+          "up": 47,
+          "evalN": 59,
+          "avgPct": 1.11,
+          "leader": {
+            "code": "300434",
+            "name": "金石亚药",
+            "pct": 4.97
+          }
+        },
+        {
+          "code": "原料药",
+          "name": "原料药",
+          "n": 44,
+          "up": 34,
+          "evalN": 44,
+          "avgPct": 0.9,
+          "leader": {
+            "code": "300765",
+            "name": "石药创新",
+            "pct": 4.82
+          }
+        },
+        {
+          "code": "创新药产业链",
+          "name": "创新药产业链",
+          "n": 24,
+          "up": 15,
+          "evalN": 24,
+          "avgPct": 0.78,
+          "leader": {
+            "code": "301096",
+            "name": "百诚医药",
+            "pct": 6.03
+          }
+        }
+      ]
+    },
+    {
+      "name": "医疗",
+      "n": 190,
+      "up": 151,
+      "evalN": 190,
+      "avgPct": 1.64,
+      "leader": {
+        "code": "301101",
+        "name": "明月镜片",
+        "pct": 20
+      },
+      "concepts": [
+        {
+          "code": "医疗器械",
+          "name": "医疗器械",
+          "n": 27,
+          "up": 26,
+          "evalN": 27,
+          "avgPct": 4.07,
+          "leader": {
+            "code": "301101",
+            "name": "明月镜片",
+            "pct": 20
+          }
+        },
+        {
+          "code": "AI医疗",
+          "name": "AI医疗",
+          "n": 11,
+          "up": 10,
+          "evalN": 11,
+          "avgPct": 3.56,
+          "leader": {
+            "code": "301584",
+            "name": "建发致新",
+            "pct": 7.5
+          }
+        },
+        {
+          "code": "医疗服务",
+          "name": "医疗服务",
+          "n": 13,
+          "up": 12,
+          "evalN": 13,
+          "avgPct": 2.27,
+          "leader": {
+            "code": "002612",
+            "name": "朗姿股份",
+            "pct": 10.01
+          }
+        },
+        {
+          "code": "体外诊断",
+          "name": "体外诊断",
+          "n": 22,
+          "up": 17,
+          "evalN": 22,
+          "avgPct": 1.75,
+          "leader": {
+            "code": "300298",
+            "name": "三诺生物",
+            "pct": 9.62
+          }
+        },
+        {
+          "code": "医疗耗材",
+          "name": "医疗耗材",
+          "n": 28,
+          "up": 22,
+          "evalN": 28,
+          "avgPct": 1.24,
+          "leader": {
+            "code": "301033",
+            "name": "迈普医学",
+            "pct": 9.71
+          }
+        },
+        {
+          "code": "中药",
+          "name": "中药",
+          "n": 59,
+          "up": 47,
+          "evalN": 59,
+          "avgPct": 0.87,
+          "leader": {
+            "code": "300519",
+            "name": "新光药业",
+            "pct": 8.83
+          }
+        },
+        {
+          "code": "医药商业",
+          "name": "医药商业",
+          "n": 30,
+          "up": 17,
+          "evalN": 30,
+          "avgPct": 0.26,
+          "leader": {
+            "code": "301015",
+            "name": "百洋医药",
+            "pct": 6.3
+          }
+        }
+      ]
+    },
+    {
+      "name": "金融类",
+      "n": 155,
+      "up": 115,
+      "evalN": 155,
+      "avgPct": 1.8,
+      "leader": {
+        "code": "300561",
+        "name": "汇金科技",
+        "pct": 20
+      },
+      "concepts": [
+        {
+          "code": "金融科技",
+          "name": "金融科技",
+          "n": 36,
+          "up": 36,
+          "evalN": 36,
+          "avgPct": 5.38,
+          "leader": {
+            "code": "300561",
+            "name": "汇金科技",
+            "pct": 20
+          }
+        },
+        {
+          "code": "多元金融",
+          "name": "多元金融",
+          "n": 24,
+          "up": 20,
+          "evalN": 24,
+          "avgPct": 1.77,
+          "leader": {
+            "code": "300386",
+            "name": "飞天诚信",
+            "pct": 5.78
+          }
+        },
+        {
+          "code": "保险",
+          "name": "保险",
+          "n": 6,
+          "up": 6,
+          "evalN": 6,
+          "avgPct": 1.75,
+          "leader": {
+            "code": "601336",
+            "name": "新华保险",
+            "pct": 2.39
+          }
+        },
+        {
+          "code": "券商概念",
+          "name": "券商概念",
+          "n": 47,
+          "up": 40,
+          "evalN": 47,
+          "avgPct": 1.19,
+          "leader": {
+            "code": "002945",
+            "name": "华林证券",
+            "pct": 10.03
+          }
+        },
+        {
+          "code": "银行",
+          "name": "银行",
+          "n": 42,
+          "up": 13,
+          "evalN": 42,
+          "avgPct": -0.54,
+          "leader": {
+            "code": "002966",
+            "name": "苏州银行",
+            "pct": 2.1
+          }
+        }
+      ]
+    },
+    {
+      "name": "资源",
+      "n": 67,
+      "up": 59,
+      "evalN": 67,
+      "avgPct": 1.57,
+      "leader": {
+        "code": "002756",
+        "name": "永兴材料",
+        "pct": 6.18
+      },
+      "concepts": [
+        {
+          "code": "锂",
+          "name": "锂",
+          "n": 15,
+          "up": 15,
+          "evalN": 15,
+          "avgPct": 2.77,
+          "leader": {
+            "code": "002756",
+            "name": "永兴材料",
+            "pct": 6.18
+          }
+        },
+        {
+          "code": "稀土永磁",
+          "name": "稀土永磁",
+          "n": 19,
+          "up": 18,
+          "evalN": 19,
+          "avgPct": 1.91,
+          "leader": {
+            "code": "600366",
+            "name": "宁波韵升",
+            "pct": 4.36
+          }
+        },
+        {
+          "code": "特种钢",
+          "name": "特种钢",
+          "n": 15,
+          "up": 12,
+          "evalN": 15,
+          "avgPct": 0.94,
+          "leader": {
+            "code": "301160",
+            "name": "翔楼新材",
+            "pct": 3.6
+          }
+        },
+        {
+          "code": "黄金",
+          "name": "黄金",
+          "n": 12,
+          "up": 9,
+          "evalN": 12,
+          "avgPct": 0.75,
+          "leader": {
+            "code": "600988",
+            "name": "赤峰黄金",
+            "pct": 4.1
+          }
+        },
+        {
+          "code": "白银",
+          "name": "白银",
+          "n": 6,
+          "up": 5,
+          "evalN": 6,
+          "avgPct": 0.67,
+          "leader": {
+            "code": "600531",
+            "name": "豫光金铅",
+            "pct": 1.41
+          }
+        }
+      ]
+    },
+    {
+      "name": "能源",
+      "n": 193,
+      "up": 118,
+      "evalN": 193,
+      "avgPct": 0.28,
+      "leader": {
+        "code": "002535",
+        "name": "林州重机",
+        "pct": 10.18
+      },
+      "concepts": [
+        {
+          "code": "风能发电",
+          "name": "风能发电",
+          "n": 51,
+          "up": 41,
+          "evalN": 51,
+          "avgPct": 1.13,
+          "leader": {
+            "code": "300850",
+            "name": "新强联",
+            "pct": 6.55
+          }
+        },
+        {
+          "code": "煤炭",
+          "name": "煤炭",
+          "n": 41,
+          "up": 29,
+          "evalN": 41,
+          "avgPct": 0.73,
+          "leader": {
+            "code": "002535",
+            "name": "林州重机",
+            "pct": 10.18
+          }
+        },
+        {
+          "code": "石油石化",
+          "name": "石油石化",
+          "n": 43,
+          "up": 26,
+          "evalN": 43,
+          "avgPct": 0.3,
+          "leader": {
+            "code": "600506",
+            "name": "统一股份",
+            "pct": 10
+          }
+        },
+        {
+          "code": "绿电运营",
+          "name": "绿电运营",
+          "n": 15,
+          "up": 10,
+          "evalN": 15,
+          "avgPct": -0.44,
+          "leader": {
+            "code": "601908",
+            "name": "京运通",
+            "pct": 1.82
+          }
+        },
+        {
+          "code": "火电",
+          "name": "火电",
+          "n": 27,
+          "up": 6,
+          "evalN": 27,
+          "avgPct": -0.72,
+          "leader": {
+            "code": "600021",
+            "name": "上海电力",
+            "pct": 1.27
+          }
+        },
+        {
+          "code": "水电核电",
+          "name": "水电核电",
+          "n": 16,
+          "up": 6,
+          "evalN": 16,
+          "avgPct": -1.33,
+          "leader": {
+            "code": "600868",
+            "name": "梅雁吉祥",
+            "pct": 1.17
+          }
+        }
+      ]
+    },
+    {
+      "name": "基建",
+      "n": 163,
+      "up": 104,
+      "evalN": 163,
+      "avgPct": 0.47,
+      "leader": {
+        "code": "603028",
+        "name": "赛福天",
+        "pct": 10.05
+      },
+      "concepts": [
+        {
+          "code": "水泥",
+          "name": "水泥",
+          "n": 18,
+          "up": 12,
+          "evalN": 18,
+          "avgPct": 0.93,
+          "leader": {
+            "code": "600326",
+            "name": "西藏天路",
+            "pct": 5.04
+          }
+        },
+        {
+          "code": "建筑材料",
+          "name": "建筑材料",
+          "n": 53,
+          "up": 35,
+          "evalN": 53,
+          "avgPct": 0.59,
+          "leader": {
+            "code": "600499",
+            "name": "科达制造",
+            "pct": 4.7
+          }
+        },
+        {
+          "code": "钢铁",
+          "name": "钢铁",
+          "n": 38,
+          "up": 22,
+          "evalN": 38,
+          "avgPct": 0.54,
+          "leader": {
+            "code": "603028",
+            "name": "赛福天",
+            "pct": 10.05
+          }
+        },
+        {
+          "code": "国家工程",
+          "name": "国家工程",
+          "n": 24,
+          "up": 15,
+          "evalN": 24,
+          "avgPct": 0.41,
+          "leader": {
+            "code": "002051",
+            "name": "中工国际",
+            "pct": 3.71
+          }
+        },
+        {
+          "code": "玻璃",
+          "name": "玻璃",
+          "n": 15,
+          "up": 13,
+          "evalN": 15,
+          "avgPct": 0.04,
+          "leader": {
+            "code": "600819",
+            "name": "耀皮玻璃",
+            "pct": 1.72
+          }
+        },
+        {
+          "code": "港口",
+          "name": "港口",
+          "n": 15,
+          "up": 7,
+          "evalN": 15,
+          "avgPct": -0.09,
+          "leader": {
+            "code": "000905",
+            "name": "厦门港务",
+            "pct": 1.21
+          }
+        }
+      ]
+    },
+    {
+      "name": "制造",
+      "n": 353,
+      "up": 322,
+      "evalN": 353,
+      "avgPct": 2.92,
+      "leader": {
+        "code": "300893",
+        "name": "松原安全",
+        "pct": 13.01
+      },
+      "concepts": [
+        {
+          "code": "电机电控",
+          "name": "电机电控",
+          "n": 26,
+          "up": 24,
+          "evalN": 26,
+          "avgPct": 3.88,
+          "leader": {
+            "code": "300450",
+            "name": "先导智能",
+            "pct": 10.91
+          }
+        },
+        {
+          "code": "动力电池",
+          "name": "动力电池",
+          "n": 61,
+          "up": 60,
+          "evalN": 61,
+          "avgPct": 3.61,
+          "leader": {
+            "code": "300953",
+            "name": "震裕科技",
+            "pct": 11.92
+          }
+        },
+        {
+          "code": "汽车传动",
+          "name": "汽车传动",
+          "n": 47,
+          "up": 41,
+          "evalN": 47,
+          "avgPct": 3.37,
+          "leader": {
+            "code": "300652",
+            "name": "雷迪克",
+            "pct": 10.85
+          }
+        },
+        {
+          "code": "汽车内饰",
+          "name": "汽车内饰",
+          "n": 18,
+          "up": 17,
+          "evalN": 18,
+          "avgPct": 3.03,
+          "leader": {
+            "code": "301529",
+            "name": "福赛科技",
+            "pct": 11.44
+          }
+        },
+        {
+          "code": "汽车电子",
+          "name": "汽车电子",
+          "n": 40,
+          "up": 37,
+          "evalN": 40,
+          "avgPct": 2.95,
+          "leader": {
+            "code": "301413",
+            "name": "安培龙",
+            "pct": 10.91
+          }
+        },
+        {
+          "code": "汽车配件",
+          "name": "汽车配件",
+          "n": 77,
+          "up": 71,
+          "evalN": 77,
+          "avgPct": 2.76,
+          "leader": {
+            "code": "603089",
+            "name": "正裕工业",
+            "pct": 9.99
+          }
+        },
+        {
+          "code": "车身结构",
+          "name": "车身结构",
+          "n": 38,
+          "up": 30,
+          "evalN": 38,
+          "avgPct": 2.27,
+          "leader": {
+            "code": "300893",
+            "name": "松原安全",
+            "pct": 13.01
+          }
+        },
+        {
+          "code": "汽车整车",
+          "name": "汽车整车",
+          "n": 21,
+          "up": 20,
+          "evalN": 21,
+          "avgPct": 2.05,
+          "leader": {
+            "code": "600303",
+            "name": "曙光股份",
+            "pct": 10.18
+          }
+        },
+        {
+          "code": "智能机器人",
+          "name": "智能机器人",
+          "n": 25,
+          "up": 22,
+          "evalN": 25,
+          "avgPct": 1.49,
+          "leader": {
+            "code": "301696",
+            "name": "三瑞智能",
+            "pct": 8.77
+          }
+        }
+      ]
+    },
+    {
+      "name": "军工",
+      "n": 105,
+      "up": 91,
+      "evalN": 105,
+      "avgPct": 1.38,
+      "leader": {
+        "code": "002827",
+        "name": "高争民爆",
+        "pct": 6.41
+      },
+      "concepts": [
+        {
+          "code": "雷达",
+          "name": "雷达",
+          "n": 11,
+          "up": 11,
+          "evalN": 11,
+          "avgPct": 1.96,
+          "leader": {
+            "code": "600562",
+            "name": "国睿科技",
+            "pct": 3.15
+          }
+        },
+        {
+          "code": "卫星火箭",
+          "name": "卫星火箭",
+          "n": 15,
+          "up": 13,
+          "evalN": 15,
+          "avgPct": 1.7,
+          "leader": {
+            "code": "300101",
+            "name": "振芯科技",
+            "pct": 3.52
+          }
+        },
+        {
+          "code": "军工电子",
+          "name": "军工电子",
+          "n": 29,
+          "up": 26,
+          "evalN": 29,
+          "avgPct": 1.55,
+          "leader": {
+            "code": "002214",
+            "name": "大立科技",
+            "pct": 5.27
+          }
+        },
+        {
+          "code": "军工整机",
+          "name": "军工整机",
+          "n": 19,
+          "up": 16,
+          "evalN": 19,
+          "avgPct": 1.52,
+          "leader": {
+            "code": "600482",
+            "name": "中国动力",
+            "pct": 5.74
+          }
+        },
+        {
+          "code": "军工材料",
+          "name": "军工材料",
+          "n": 14,
+          "up": 13,
+          "evalN": 14,
+          "avgPct": 1.34,
+          "leader": {
+            "code": "002625",
+            "name": "光启技术",
+            "pct": 3.02
+          }
+        },
+        {
+          "code": "兵器火工",
+          "name": "兵器火工",
+          "n": 17,
+          "up": 12,
+          "evalN": 17,
+          "avgPct": 0.28,
+          "leader": {
+            "code": "002827",
+            "name": "高争民爆",
+            "pct": 6.41
+          }
+        }
+      ]
+    },
+    {
+      "name": "社会服务",
+      "n": 80,
+      "up": 47,
+      "evalN": 80,
+      "avgPct": 0.37,
+      "leader": {
+        "code": "300483",
+        "name": "首华燃气",
+        "pct": 5.5
+      },
+      "concepts": [
+        {
+          "code": "供热",
+          "name": "供热",
+          "n": 17,
+          "up": 13,
+          "evalN": 17,
+          "avgPct": 0.51,
+          "leader": {
+            "code": "301197",
+            "name": "工大科雅",
+            "pct": 2.14
+          }
+        },
+        {
+          "code": "燃气",
+          "name": "燃气",
+          "n": 35,
+          "up": 21,
+          "evalN": 35,
+          "avgPct": 0.45,
+          "leader": {
+            "code": "300483",
+            "name": "首华燃气",
+            "pct": 5.5
+          }
+        },
+        {
+          "code": "水务",
+          "name": "水务",
+          "n": 19,
+          "up": 9,
+          "evalN": 19,
+          "avgPct": 0.26,
+          "leader": {
+            "code": "000753",
+            "name": "漳州发展",
+            "pct": 2.34
+          }
+        },
+        {
+          "code": "供电",
+          "name": "供电",
+          "n": 9,
+          "up": 4,
+          "evalN": 9,
+          "avgPct": 0.01,
+          "leader": {
+            "code": "600644",
+            "name": "乐山电力",
+            "pct": 1.13
+          }
+        }
+      ]
+    },
+    {
+      "name": "环保",
+      "n": 123,
+      "up": 93,
+      "evalN": 123,
+      "avgPct": 0.83,
+      "leader": {
+        "code": "300815",
+        "name": "玉禾田",
+        "pct": 7.62
+      },
+      "concepts": [
+        {
+          "code": "污水处理",
+          "name": "污水处理",
+          "n": 32,
+          "up": 25,
+          "evalN": 32,
+          "avgPct": 1.07,
+          "leader": {
+            "code": "000920",
+            "name": "沃顿科技",
+            "pct": 3.97
+          }
+        },
+        {
+          "code": "环保运营",
+          "name": "环保运营",
+          "n": 42,
+          "up": 34,
+          "evalN": 42,
+          "avgPct": 0.97,
+          "leader": {
+            "code": "300815",
+            "name": "玉禾田",
+            "pct": 7.62
+          }
+        },
+        {
+          "code": "再生资源",
+          "name": "再生资源",
+          "n": 20,
+          "up": 16,
+          "evalN": 20,
+          "avgPct": 0.87,
+          "leader": {
+            "code": "000803",
+            "name": "山高环能",
+            "pct": 4.64
+          }
+        },
+        {
+          "code": "环保装备",
+          "name": "环保装备",
+          "n": 29,
+          "up": 18,
+          "evalN": 29,
+          "avgPct": 0.33,
+          "leader": {
+            "code": "301273",
+            "name": "瑞晨环保",
+            "pct": 6.87
+          }
+        }
+      ]
+    },
+    {
+      "name": "光伏",
+      "n": 53,
+      "up": 45,
+      "evalN": 53,
+      "avgPct": 1.28,
+      "leader": {
+        "code": "600732",
+        "name": "爱旭股份",
+        "pct": 5.09
+      },
+      "concepts": [
+        {
+          "code": "光伏设备",
+          "name": "光伏设备",
+          "n": 13,
+          "up": 11,
+          "evalN": 13,
+          "avgPct": 1.67,
+          "leader": {
+            "code": "301669",
+            "name": "高特电子",
+            "pct": 4.13
+          }
+        },
+        {
+          "code": "光伏材料",
+          "name": "光伏材料",
+          "n": 17,
+          "up": 16,
+          "evalN": 17,
+          "avgPct": 1.17,
+          "leader": {
+            "code": "603051",
+            "name": "鹿山新材",
+            "pct": 3.18
+          }
+        },
+        {
+          "code": "光伏制造",
+          "name": "光伏制造",
+          "n": 23,
+          "up": 18,
+          "evalN": 23,
+          "avgPct": 1.14,
+          "leader": {
+            "code": "600732",
+            "name": "爱旭股份",
+            "pct": 5.09
+          }
+        }
+      ]
+    },
+    {
+      "name": "基础化工",
+      "n": 323,
+      "up": 246,
+      "evalN": 323,
+      "avgPct": 0.8,
+      "leader": {
+        "code": "300886",
+        "name": "华业香料",
+        "pct": 8.58
+      },
+      "concepts": [
+        {
+          "code": "氟化工",
+          "name": "氟化工",
+          "n": 29,
+          "up": 23,
+          "evalN": 29,
+          "avgPct": 1.14,
+          "leader": {
+            "code": "603255",
+            "name": "鼎际得",
+            "pct": 5.28
+          }
+        },
+        {
+          "code": "涂料油墨",
+          "name": "涂料油墨",
+          "n": 29,
+          "up": 21,
+          "evalN": 29,
+          "avgPct": 1.02,
+          "leader": {
+            "code": "603683",
+            "name": "晶华新材",
+            "pct": 5.76
+          }
+        },
+        {
+          "code": "精细中间体",
+          "name": "精细中间体",
+          "n": 69,
+          "up": 52,
+          "evalN": 69,
+          "avgPct": 0.95,
+          "leader": {
+            "code": "300886",
+            "name": "华业香料",
+            "pct": 8.58
+          }
+        },
+        {
+          "code": "橡塑材料",
+          "name": "橡塑材料",
+          "n": 30,
+          "up": 23,
+          "evalN": 30,
+          "avgPct": 0.95,
+          "leader": {
+            "code": "301196",
+            "name": "唯科科技",
+            "pct": 6.08
+          }
+        },
+        {
+          "code": "化学纤维",
+          "name": "化学纤维",
+          "n": 19,
+          "up": 16,
+          "evalN": 19,
+          "avgPct": 0.9,
+          "leader": {
+            "code": "601233",
+            "name": "桐昆股份",
+            "pct": 2.95
+          }
+        },
+        {
+          "code": "复合材料",
+          "name": "复合材料",
+          "n": 20,
+          "up": 14,
+          "evalN": 20,
+          "avgPct": 0.8,
+          "leader": {
+            "code": "300920",
+            "name": "润阳科技",
+            "pct": 7.84
+          }
+        },
+        {
+          "code": "农药化肥",
+          "name": "农药化肥",
+          "n": 47,
+          "up": 35,
+          "evalN": 47,
+          "avgPct": 0.73,
+          "leader": {
+            "code": "000893",
+            "name": "亚钾国际",
+            "pct": 2.89
+          }
+        },
+        {
+          "code": "化工原料",
+          "name": "化工原料",
+          "n": 80,
+          "up": 62,
+          "evalN": 80,
+          "avgPct": 0.44,
+          "leader": {
+            "code": "600989",
+            "name": "宝丰能源",
+            "pct": 5.02
+          }
+        }
+      ]
+    },
+    {
+      "name": "有色金属",
+      "n": 70,
+      "up": 62,
+      "evalN": 70,
+      "avgPct": 1.35,
+      "leader": {
+        "code": "002988",
+        "name": "豪美新材",
+        "pct": 10
+      },
+      "concepts": [
+        {
+          "code": "小金属",
+          "name": "小金属",
+          "n": 20,
+          "up": 19,
+          "evalN": 20,
+          "avgPct": 1.89,
+          "leader": {
+            "code": "002428",
+            "name": "云南锗业",
+            "pct": 5.82
+          }
+        },
+        {
+          "code": "工业金属",
+          "name": "工业金属",
+          "n": 50,
+          "up": 43,
+          "evalN": 50,
+          "avgPct": 1.13,
+          "leader": {
+            "code": "002988",
+            "name": "豪美新材",
+            "pct": 10
+          }
+        }
+      ]
+    },
+    {
+      "name": "房地产建筑",
+      "n": 148,
+      "up": 117,
+      "evalN": 148,
+      "avgPct": 1.19,
+      "leader": {
+        "code": "300949",
+        "name": "奥雅股份",
+        "pct": 17.01
+      },
+      "concepts": [
+        {
+          "code": "园林生态",
+          "name": "园林生态",
+          "n": 13,
+          "up": 11,
+          "evalN": 13,
+          "avgPct": 2.89,
+          "leader": {
+            "code": "300949",
+            "name": "奥雅股份",
+            "pct": 17.01
+          }
+        },
+        {
+          "code": "房地产开发",
+          "name": "房地产开发",
+          "n": 69,
+          "up": 58,
+          "evalN": 69,
+          "avgPct": 1.16,
+          "leader": {
+            "code": "600094",
+            "name": "大名城",
+            "pct": 10.03
+          }
+        },
+        {
+          "code": "物业服务",
+          "name": "物业服务",
+          "n": 14,
+          "up": 10,
+          "evalN": 14,
+          "avgPct": 0.97,
+          "leader": {
+            "code": "300917",
+            "name": "特发服务",
+            "pct": 3.94
+          }
+        },
+        {
+          "code": "建筑装饰",
+          "name": "建筑装饰",
+          "n": 52,
+          "up": 38,
+          "evalN": 52,
+          "avgPct": 0.85,
+          "leader": {
+            "code": "002830",
+            "name": "名雕股份",
+            "pct": 4.74
+          }
+        }
+      ]
+    },
+    {
+      "name": "交运物流",
+      "n": 120,
+      "up": 79,
+      "evalN": 120,
+      "avgPct": 0.63,
+      "leader": {
+        "code": "603713",
+        "name": "密尔克卫",
+        "pct": 10
+      },
+      "concepts": [
+        {
+          "code": "快递物流",
+          "name": "快递物流",
+          "n": 56,
+          "up": 41,
+          "evalN": 56,
+          "avgPct": 1.06,
+          "leader": {
+            "code": "603713",
+            "name": "密尔克卫",
+            "pct": 10
+          }
+        },
+        {
+          "code": "航空机场",
+          "name": "航空机场",
+          "n": 13,
+          "up": 13,
+          "evalN": 13,
+          "avgPct": 1.03,
+          "leader": {
+            "code": "603885",
+            "name": "吉祥航空",
+            "pct": 2.5
+          }
+        },
+        {
+          "code": "航运",
+          "name": "航运",
+          "n": 17,
+          "up": 11,
+          "evalN": 17,
+          "avgPct": 0.29,
+          "leader": {
+            "code": "601872",
+            "name": "招商轮船",
+            "pct": 1.91
+          }
+        },
+        {
+          "code": "铁路公路",
+          "name": "铁路公路",
+          "n": 34,
+          "up": 14,
+          "evalN": 34,
+          "avgPct": -0.06,
+          "leader": {
+            "code": "600106",
+            "name": "重庆路桥",
+            "pct": 1.96
+          }
+        }
+      ]
+    },
+    {
+      "name": "纺织服饰",
+      "n": 83,
+      "up": 63,
+      "evalN": 83,
+      "avgPct": 1.36,
+      "leader": {
+        "code": "002687",
+        "name": "乔治白",
+        "pct": 9.93
+      },
+      "concepts": [
+        {
+          "code": "纺织制造",
+          "name": "纺织制造",
+          "n": 36,
+          "up": 29,
+          "evalN": 36,
+          "avgPct": 1.76,
+          "leader": {
+            "code": "600851",
+            "name": "海欣股份",
+            "pct": 8.71
+          }
+        },
+        {
+          "code": "服装家纺",
+          "name": "服装家纺",
+          "n": 47,
+          "up": 34,
+          "evalN": 47,
+          "avgPct": 1.05,
+          "leader": {
+            "code": "002687",
+            "name": "乔治白",
+            "pct": 9.93
+          }
+        }
+      ]
+    },
+    {
+      "name": "轻工制造",
+      "n": 131,
+      "up": 98,
+      "evalN": 131,
+      "avgPct": 1.37,
+      "leader": {
+        "code": "301448",
+        "name": "开创电气",
+        "pct": 13.08
+      },
+      "concepts": [
+        {
+          "code": "其他轻工",
+          "name": "其他轻工",
+          "n": 18,
+          "up": 15,
+          "evalN": 18,
+          "avgPct": 3.11,
+          "leader": {
+            "code": "301448",
+            "name": "开创电气",
+            "pct": 13.08
+          }
+        },
+        {
+          "code": "包装印刷",
+          "name": "包装印刷",
+          "n": 46,
+          "up": 39,
+          "evalN": 46,
+          "avgPct": 1.19,
+          "leader": {
+            "code": "605488",
+            "name": "福莱新材",
+            "pct": 10.01
+          }
+        },
+        {
+          "code": "家居用品",
+          "name": "家居用品",
+          "n": 45,
+          "up": 27,
+          "evalN": 45,
+          "avgPct": 1.14,
+          "leader": {
+            "code": "300616",
+            "name": "尚品宅配",
+            "pct": 13.03
+          }
+        },
+        {
+          "code": "造纸",
+          "name": "造纸",
+          "n": 22,
+          "up": 17,
+          "evalN": 22,
+          "avgPct": 0.8,
+          "leader": {
+            "code": "600235",
+            "name": "民丰特纸",
+            "pct": 2.33
+          }
+        }
+      ]
+    },
+    {
+      "name": "通用制造",
+      "n": 349,
+      "up": 291,
+      "evalN": 349,
+      "avgPct": 1.87,
+      "leader": {
+        "code": "300307",
+        "name": "慈星股份",
+        "pct": 20
+      },
+      "concepts": [
+        {
+          "code": "机械零部件",
+          "name": "机械零部件",
+          "n": 53,
+          "up": 48,
+          "evalN": 53,
+          "avgPct": 2.9,
+          "leader": {
+            "code": "301699",
+            "name": "洛轴股份",
+            "pct": 20
+          }
+        },
+        {
+          "code": "电子元器件",
+          "name": "电子元器件",
+          "n": 46,
+          "up": 40,
+          "evalN": 46,
+          "avgPct": 2.05,
+          "leader": {
+            "code": "300319",
+            "name": "麦捷科技",
+            "pct": 6.98
+          }
+        },
+        {
+          "code": "通用设备",
+          "name": "通用设备",
+          "n": 104,
+          "up": 80,
+          "evalN": 104,
+          "avgPct": 1.79,
+          "leader": {
+            "code": "300307",
+            "name": "慈星股份",
+            "pct": 20
+          }
+        },
+        {
+          "code": "电工器材",
+          "name": "电工器材",
+          "n": 49,
+          "up": 42,
+          "evalN": 49,
+          "avgPct": 1.69,
+          "leader": {
+            "code": "001359",
+            "name": "平安电工",
+            "pct": 10
+          }
+        },
+        {
+          "code": "电力设备",
+          "name": "电力设备",
+          "n": 83,
+          "up": 72,
+          "evalN": 83,
+          "avgPct": 1.49,
+          "leader": {
+            "code": "002606",
+            "name": "大连电瓷",
+            "pct": 7.95
+          }
+        },
+        {
+          "code": "轨道交通",
+          "name": "轨道交通",
+          "n": 14,
+          "up": 9,
+          "evalN": 14,
+          "avgPct": 0.78,
+          "leader": {
+            "code": "301016",
+            "name": "雷尔伟",
+            "pct": 3.55
+          }
+        }
+      ]
+    },
+    {
+      "name": "旅游酒店餐饮",
+      "n": 32,
+      "up": 27,
+      "evalN": 32,
+      "avgPct": 1.13,
+      "leader": {
+        "code": "002707",
+        "name": "众信旅游",
+        "pct": 2.71
+      },
+      "concepts": [
+        {
+          "code": "旅游景区",
+          "name": "旅游景区",
+          "n": 24,
+          "up": 21,
+          "evalN": 24,
+          "avgPct": 1.17,
+          "leader": {
+            "code": "002707",
+            "name": "众信旅游",
+            "pct": 2.71
+          }
+        },
+        {
+          "code": "酒店餐饮",
+          "name": "酒店餐饮",
+          "n": 8,
+          "up": 6,
+          "evalN": 8,
+          "avgPct": 0.99,
+          "leader": {
+            "code": "301073",
+            "name": "君亭酒店",
+            "pct": 2.02
+          }
+        }
+      ]
+    },
+    {
+      "name": "专业服务",
+      "n": 65,
+      "up": 50,
+      "evalN": 65,
+      "avgPct": 1.09,
+      "leader": {
+        "code": "300825",
+        "name": "阿尔特",
+        "pct": 12.09
+      },
+      "concepts": [
+        {
+          "code": "检测认证",
+          "name": "检测认证",
+          "n": 20,
+          "up": 18,
+          "evalN": 20,
+          "avgPct": 2.3,
+          "leader": {
+            "code": "300012",
+            "name": "华测检测",
+            "pct": 6.89
+          }
+        },
+        {
+          "code": "工程咨询",
+          "name": "工程咨询",
+          "n": 45,
+          "up": 32,
+          "evalN": 45,
+          "avgPct": 0.55,
+          "leader": {
+            "code": "300825",
+            "name": "阿尔特",
+            "pct": 12.09
+          }
+        }
+      ]
+    },
+    {
+      "name": "农业",
+      "n": 22,
+      "up": 11,
+      "evalN": 22,
+      "avgPct": -0.35,
+      "leader": {
+        "code": "000592",
+        "name": "平潭发展",
+        "pct": 3.55
+      },
+      "concepts": [
+        {
+          "code": "林业",
+          "name": "林业",
+          "n": 5,
+          "up": 3,
+          "evalN": 5,
+          "avgPct": 0.87,
+          "leader": {
+            "code": "000592",
+            "name": "平潭发展",
+            "pct": 3.55
+          }
+        },
+        {
+          "code": "农业种植",
+          "name": "农业种植",
+          "n": 17,
+          "up": 8,
+          "evalN": 17,
+          "avgPct": -0.71,
+          "leader": {
+            "code": "000998",
+            "name": "隆平高科",
+            "pct": 1.26
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+
+<script src="treemap.js"></script>
+<script>
+(function () {
+  'use strict';
+  var backBtn = document.getElementById('backBtn');
+  var crumbText = document.getElementById('crumbText');
+  var fromLive = false;
+
+  function fmtPct(v) { return (v >= 0 ? '+' : '') + v.toFixed(2) + '%'; }
+
+  /* 优先读取同目录 heatmap.json；file:// 直开时回退到上方内嵌快照 */
+  function loadData() {
+    return fetch('heatmap.json', { cache: 'no-store' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        fromLive = true;
+        return res.json();
+      })
+      .catch(function () {
+        return JSON.parse(document.getElementById('fallback').textContent);
+      });
+  }
+
+  function chrome(cat, meta) {
+    if (!cat) {
+      backBtn.hidden = true;
+      crumbText.innerHTML = '全部 ' + meta.categories + ' 个大类 · ' + meta.concepts +
+        ' 个子概念（提示：点击单元格放大对应大类，Esc 返回）';
+    } else {
+      backBtn.hidden = false;
+      crumbText.innerHTML = '<b>' + cat.name + '</b>　平均 <span class="' + (cat.avgPct >= 0 ? 'up' : 'down') + '">' +
+        fmtPct(cat.avgPct) + '</span>　涨股比 ' + cat.up + '/' + cat.evalN +
+        '　领涨 ' + cat.leader.name + ' ' + fmtPct(cat.leader.pct);
+    }
+  }
+
+  loadData().then(function (data) {
+    var m = data.meta;
+    document.getElementById('meta').innerHTML =
+      '<span>' + m.lastDate + '</span>' +
+      '<span>' + m.stocksEvaluated + ' 只个股</span>' +
+      '<span>' + m.categories + ' 大类</span>' +
+      '<span>' + m.concepts + ' 概念</span>' +
+      '<span>' + (fromLive ? '数据源 heatmap.json（实时）' : '数据源 内嵌快照 ' + m.lastDate) + '</span>';
+
+    /* 像 D3 一样使用插件：Treemap(容器).data(数据).on(事件).render() */
+    var chart = Treemap('#plot')
+      .data(data)
+      .on('zoom', function (cat) { chrome(cat, m); })
+      .on('back', function () { chrome(null, m); })
+      .render();
+
+    backBtn.addEventListener('click', function () { chart.back(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') chart.back(); });
+    chrome(null, m);
+  });
+})();
+</script>
+</body>
+</html>

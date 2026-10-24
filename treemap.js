@@ -9,6 +9,7 @@
  *    全色阶对白字满足 WCAG AA（对比度 ≥ 4.5:1）；
  *  - 布局：squarify（与 d3.treemapSquarify.ratio(1) 数值等价，容差 <0.5px）
  *    + resquarify（数据更新时复用行划分，保持格子位置稳定）；
+ *    小格子按 conceptSort 顺序放置（默认：大类涨时 avgPct 降序、跌时升序），面积大小仍由 .area() 编码；
  *  - 涨股比附 Wilson 95% 置信区间，避免小样本比率被过度解读。
  *
  * 用法（像 D3 一样）：
@@ -244,13 +245,14 @@
    * 布局：squarify（与 d3.treemapSquarify.ratio(1) 数值等价）+ resquarify
    * items: [{ key, value>0 }]；返回 { rects: {key:{x,y,w,h}}, rows, order }
    * ================================================================ */
-  function squarifyLayout(items, x0, y0, x1, y1) {
+  function squarifyLayout(items, x0, y0, x1, y1, keepOrder) {
     var n = items.length;
     var rects = {}, rows = [];
     if (n === 0 || !(x1 > x0) || !(y1 > y0)) return { rects: rects, rows: rows, order: [] };
 
-    var order = items.map(function (_, i) { return i; })
-      .sort(function (a, b) { return items[b].value - items[a].value || a - b; });
+    // keepOrder=true：按传入顺序放置（不按面积降序重排），供小格子跟随 conceptSort
+    var order = items.map(function (_, i) { return i; });
+    if (!keepOrder) order.sort(function (a, b) { return items[b].value - items[a].value || a - b; });
     var total = 0;
     items.forEach(function (it) { total += it.value; });
 
@@ -326,9 +328,9 @@
   }
 
   /** resquarify：键集合不变时复用上次行划分与行方向（D3 语义），否则退回 squarify。 */
-  function resquarifyLayout(items, x0, y0, x1, y1, state) {
+  function resquarifyLayout(items, x0, y0, x1, y1, state, keepOrder) {
     if (!state || !state.rows || !keySetMatch(state.rows, items)) {
-      var fresh = squarifyLayout(items, x0, y0, x1, y1);
+      var fresh = squarifyLayout(items, x0, y0, x1, y1, keepOrder);
       return { rects: fresh.rects, rows: fresh.rows, order: fresh.order, fresh: true };
     }
     var byKey = {};
@@ -477,7 +479,9 @@
     zoomable: true,
     layout: 'resquarify', // 'resquarify' | 'squarify'
     color: function (d) { return Math.max(0, Math.min(1, ((d.avgPct || 0) + 10) / 20)); }, // 颜色 = 平均涨幅，[-10%,+10%] → [0,1]，0 为灰
-    conceptSort: function (a, b) { return (b.avgPct || 0) - (a.avgPct || 0); },
+    conceptSort: function (a, b, cat) { // 默认：所属大类涨（avgPct≥0）降序、跌升序；第三参为所属大类
+      return (cat && cat.avgPct < 0 ? -1 : 1) * ((b.avgPct || 0) - (a.avgPct || 0));
+    },
     categorySort: function (a, b) { return (b.avgPct || 0) - (a.avgPct || 0); },
     tooltip: defaultTooltip
   };
@@ -576,9 +580,9 @@
     return Math.max(v, this._opt.floor);
   };
 
-  Treemap.prototype._layoutLevel = function (levelId, items, x0, y0, x1, y1) {
-    if (this._opt.layout === 'squarify') return squarifyLayout(items, x0, y0, x1, y1);
-    var res = resquarifyLayout(items, x0, y0, x1, y1, this._layoutStates[levelId]);
+  Treemap.prototype._layoutLevel = function (levelId, items, x0, y0, x1, y1, keepOrder) {
+    if (this._opt.layout === 'squarify') return squarifyLayout(items, x0, y0, x1, y1, keepOrder);
+    var res = resquarifyLayout(items, x0, y0, x1, y1, this._layoutStates[levelId], keepOrder);
     this._layoutStates[levelId] = { rows: res.rows };
     return res;
   };
@@ -595,9 +599,12 @@
     return this;
   };
 
+  /** 子概念预排：默认大类涨（avgPct≥0）按 avgPct 降序、大类跌按升序（两端极值都靠前）；
+      该顺序同时决定小格子的布局放置顺序（keepOrder）；自定义比较器签名 (a, b, cat) */
   Treemap.prototype._concepts = function (cat) {
     var arr = (cat.concepts || []).slice();
-    if (typeof this._opt.conceptSort === 'function') arr.sort(this._opt.conceptSort);
+    var cmp = this._opt.conceptSort;
+    if (typeof cmp === 'function') arr.sort(function (a, b) { return cmp(a, b, cat); });
     return arr;
   };
 
@@ -669,7 +676,8 @@
 
       var concepts = self._concepts(cat);
       var citems = concepts.map(function (c, j) { return { key: c.code || c.name || ('c' + j), value: self._weight(c) }; });
-      var claid = self._layoutLevel('cat:' + (cat.name || ci), citems, ix, iy, ix + iw, iy + ih);
+      // keepOrder：小格子按 conceptSort（默认大类涨降序/跌升序）顺序放置，面积大小仍由 value 决定
+      var claid = self._layoutLevel('cat:' + (cat.name || ci), citems, ix, iy, ix + iw, iy + ih, true);
 
       concepts.forEach(function (cp, j) {
         var cr = claid.rects[citems[j].key];
@@ -690,7 +698,7 @@
     var g = 2; // 单元格间隙 inset，与一级模块一致（相邻间距 = 2g）
     var concepts = this._concepts(cat);
     var items = concepts.map(function (c, j) { return { key: c.code || c.name || ('c' + j), value: self._weight(c) }; });
-    var laid = this._layoutLevel('zoom:' + this._zoom, items, pad, pad, W - pad, H - pad);
+    var laid = this._layoutLevel('zoom:' + this._zoom, items, pad, pad, W - pad, H - pad, true); // keepOrder：跟随 conceptSort
     var frag = document.createDocumentFragment();
     concepts.forEach(function (cp, j) {
       var r = laid.rects[items[j].key];

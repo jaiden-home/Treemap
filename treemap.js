@@ -356,11 +356,15 @@
     '.tm-cell.tm-z .tm-nm{font-size:14px}',
     '.tm-cell.tm-z .tm-pv{font-size:12px}',
     '.tm-cell.tm-z .tm-ex{font-size:11px}',
-    '.tm-frame{position:absolute;border:1px solid rgba(255,255,255,.24);border-radius:5px;pointer-events:none;z-index:4}',
-    '.tm-frame-label{position:absolute;top:2px;left:4px;display:flex;gap:6px;align-items:baseline;pointer-events:auto;cursor:pointer;max-width:calc(100% - 8px);overflow:hidden}',
+    '.tm-frame{position:absolute;pointer-events:none;z-index:4;overflow:hidden;background:rgba(10,13,18,.42);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 10px rgba(0,0,0,.28)}',
+    '.tm-frame-label{position:absolute;top:0;left:0;right:0;height:20px;display:flex;gap:6px;align-items:center;padding:0 8px;pointer-events:auto;cursor:pointer;overflow:hidden;background:linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.03));border-bottom:1px solid rgba(255,255,255,.10)}',
+    '.tm-frame-label:hover{background:linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.05))}',
     '.tm-frame-label:hover b{text-decoration:underline}',
-    '.tm-frame-label b{font-size:11px;font-weight:700;letter-spacing:.5px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);white-space:nowrap}',
-    '.tm-frame-label span{font-size:9px;font-variant-numeric:tabular-nums;text-shadow:0 1px 3px rgba(0,0,0,.8);white-space:nowrap}',
+    '.tm-frame-label b{font-size:11px;font-weight:700;letter-spacing:.5px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.tm-frame-label span{font-size:10px;font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}',
+    '.tm-frame.tm-fs .tm-frame-label{height:15px;padding:0 5px;gap:4px}',
+    '.tm-frame.tm-fs .tm-frame-label b{font-size:9px;letter-spacing:.2px}',
+    '.tm-frame.tm-fs .tm-frame-label span{display:none}',
     '.tm-tip{position:fixed;z-index:1000;pointer-events:none;background:rgba(15,18,26,.97);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.6;box-shadow:0 8px 30px rgba(0,0,0,.55);max-width:300px;color:#e8eaed;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif}',
     '.tm-tip .tm-tt{font-weight:700;font-size:13px;margin-bottom:6px;display:flex;align-items:baseline;gap:8px}',
     '.tm-tip .tm-tc{font-size:10px;color:#9aa0aa;font-weight:400}',
@@ -396,7 +400,8 @@
     area: 'n',            // 'n' | 'absPct' | fn(d) —— 面积编码，默认板块体量（成分股数）
     floor: 0.5,           // 面积权重下限
     padding: 3,
-    labelHeight: 15,
+    frameGap: 4,          // 大类模块之间的间隙（px）
+    labelHeight: 20,
     zoomable: true,
     layout: 'resquarify', // 'resquarify' | 'squarify'
     color: function (d) { return d.evalN ? d.up / d.evalN : 0.5; },
@@ -537,25 +542,27 @@
 
       var frame = document.createElement('div');
       frame.className = 'tm-frame';
-      setBox(frame, r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+      var gi = opt.frameGap / 2;
+      setBox(frame, r.x + gi, r.y + gi, r.w - opt.frameGap, r.h - opt.frameGap);
 
-      var showLabel = r.w >= 84 && r.h >= 46;
-      if (showLabel) {
-        var lb = document.createElement('div');
-        lb.className = 'tm-frame-label';
-        lb.dataset.c = ci;
-        lb.title = '点击放大「' + cat.name + '」';
-        lb.innerHTML = '<b>' + cat.name + '</b>' +
-          (typeof cat.avgPct === 'number'
-            ? '<span class="' + (cat.avgPct >= 0 ? 'tm-up' : 'tm-down') + '">' + fmtPct(cat.avgPct) + '</span>'
-            : '');
-        frame.appendChild(lb);
-      }
+      var small = r.w < 84 || r.h < 46;
+      if (small) frame.classList.add('tm-fs');
+
+      var lb = document.createElement('div');
+      lb.className = 'tm-frame-label';
+      lb.dataset.c = ci;
+      lb.title = '点击放大「' + cat.name + '」';
+      lb.innerHTML = '<b>' + cat.name + '</b>' +
+        (!small && typeof cat.avgPct === 'number'
+          ? '<span class="' + (cat.avgPct >= 0 ? 'tm-up' : 'tm-down') + '">' + fmtPct(cat.avgPct) + '</span>'
+          : '');
+      frame.appendChild(lb);
       frameFrag.appendChild(frame);
 
-      var off = showLabel ? opt.labelHeight : 0;
-      var ix = r.x + opt.padding, iy = r.y + opt.padding + off;
-      var iw = r.w - opt.padding * 2, ih = r.h - opt.padding * 2 - off;
+      var headerH = small ? 15 : opt.labelHeight;
+      var off = r.h >= headerH + 12 ? headerH : 0;
+      var ix = r.x + gi + opt.padding, iy = r.y + gi + opt.padding + off;
+      var iw = r.w - opt.frameGap - opt.padding * 2, ih = r.h - opt.frameGap - opt.padding * 2 - off;
       if (iw < 4 || ih < 4) return;
 
       var concepts = self._concepts(cat);
@@ -575,9 +582,10 @@
   };
 
   Treemap.prototype._renderZoom = function (W, H) {
-    var self = this;
+    var self = this, opt = this._opt;
     var cat = this._data.categories[this._zoom];
     var pad = 6;
+    var gi = opt.frameGap / 2;
     var concepts = this._concepts(cat);
     var items = concepts.map(function (c, j) { return { key: c.code || c.name || ('c' + j), value: self._weight(c) }; });
     var laid = this._layoutLevel('zoom:' + this._zoom, items, pad, pad, W - pad, H - pad);
@@ -586,7 +594,9 @@
       var r = laid.rects[items[j].key];
       if (!r || r.w < 3 || r.h < 3) return;
       var realIdx = (cat.concepts || []).indexOf(cp);
-      frag.appendChild(self._makeCell(cp, self._zoom, realIdx, r, true, j));
+      var gr = { x: r.x + gi, y: r.y + gi, w: r.w - opt.frameGap, h: r.h - opt.frameGap };
+      if (gr.w < 3 || gr.h < 3) return;
+      frag.appendChild(self._makeCell(cp, self._zoom, realIdx, gr, true, j));
     });
     this._root.appendChild(frag);
   };

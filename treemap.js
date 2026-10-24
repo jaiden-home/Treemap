@@ -350,7 +350,7 @@
    * ================================================================ */
   var CSS = [
     '.tm-root{position:relative;width:100%;height:100%;overflow:hidden;user-select:none}',
-    '.tm-cell{position:absolute;border:1px solid rgba(11,14,20,.95);cursor:pointer;overflow:hidden;animation:tmIn .4s ease both;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}',
+    '.tm-cell{position:absolute;border:1px solid transparent;cursor:pointer;overflow:hidden;animation:tmIn .4s ease both;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}',
     '.tm-cell:hover{filter:brightness(1.1);z-index:6;transform:translateY(-3px) scale(1.02);box-shadow:0 10px 26px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.22)}',
     '@keyframes tmIn{from{opacity:0}to{opacity:1}}',
     '.tm-lbl{position:absolute;inset:0;padding:4px 6px;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.65)}',

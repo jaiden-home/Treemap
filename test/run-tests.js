@@ -6,7 +6,7 @@
  *  T2 无重叠          任意两格交集面积 ≈ 0
  *  T3 不越界          所有格子在容器内
  *  T4 颜色单调        离开锚点 0.5 越远，感知距离（Lab ΔE）单调增大；红/绿方向正确
- *  T5 WCAG AA         全色阶白字对比度 ≥ 4.5:1
+ *  T5 WCAG AA         自适应文字（浅底深字/深底白字）全色阶对比度 ≥ 4.5:1
  *  T6 色盲可分辨      红/绿端点在 deuteranopia/protanopia 模拟后仍可分辨（ΔE76 报告+阈值）
  *  T7 Wilson 区间     与独立公式交叉验证、边界行为
  *  T8 宽高比回归      真实数据布局的最差宽高比 ≤ 阈值
@@ -103,16 +103,23 @@ test('方向正确：红支 (r-g) 递增，绿支 (g-r) 递增', () => {
   }
 });
 
-console.log('\n== T5 WCAG AA 对比度（白字 vs 全色阶） ==');
-test('全色阶 101 采样点白字对比度 ≥ 4.5:1', () => {
-  let minC = Infinity, minAt = 0;
+console.log('\n== T5 WCAG AA 对比度（自适应文字 vs 全色阶） ==');
+test('全色阶 101 采样点：浅底深字 / 深底白字对比度 ≥ 4.5:1', () => {
+  const DARK_TEXT = [0, 0, 0]; // 深色主文字 #000（.tm-cell.tm-dk .tm-nm）：不透明纯黑，保证切换边界无 WCAG 死区
+  let minC = Infinity, minAt = 0, darkCnt = 0;
   for (let i = 0; i <= 100; i++) {
     const ratio = i / 100;
-    const lum = U.relativeLuminance(...U.scaleRgb(ratio));
-    const c = U.contrastRatio(1.0, lum); // 白字 luminance=1
+    const rgb = U.scaleRgb(ratio);
+    const lum = U.relativeLuminance(...rgb);
+    // 与渲染器 isLightBg 同规则：白字对比度 < 4.5 时切换深色文字
+    const useDark = U.contrastRatio(1.0, lum) < 4.5;
+    if (useDark) darkCnt++;
+    const c = useDark
+      ? U.contrastRatio(lum, U.relativeLuminance(...DARK_TEXT))
+      : U.contrastRatio(1.0, lum);
     if (c < minC) { minC = c; minAt = ratio; }
   }
-  console.log(`        （最小对比度 ${minC.toFixed(2)}:1 @ratio=${minAt}）`);
+  console.log(`        （最小对比度 ${minC.toFixed(2)}:1 @ratio=${minAt}，深字采样 ${darkCnt}/101）`);
   assert(minC >= 4.5, '最小对比度 ' + minC.toFixed(2) + ' < 4.5');
 });
 

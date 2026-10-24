@@ -6,7 +6,7 @@
  *  - 颜色为 CIE LCh（HCL）感知均匀 diverging 色阶，由平均涨幅驱动：
  *    锚点 = 0%（中性灰），红涨绿跌，±10% 封顶（≥+10% 最红，≤-10% 最绿）；
  *    两端点明度不同（红 L*=47 / 绿 L*=36），为色觉障碍者保留亮度冗余编码；
- *    全色阶对白字满足 WCAG AA（对比度 ≥ 4.5:1）；
+ *    文字颜色自适应底色深浅（isLightBg：浅底深字 / 深底白字），全色阶均满足 WCAG AA（对比度 ≥ 4.5:1）；
  *  - 布局：squarify（与 d3.treemapSquarify.ratio(1) 数值等价，容差 <0.5px）
  *    + resquarify（数据更新时复用行划分，保持格子位置稳定）；
  *    小格子按 conceptSort 顺序放置（默认：大类涨时 avgPct 降序、跌时升序），面积大小仍由 .area() 编码；
@@ -421,7 +421,7 @@
     '.tm-pv{font-size:10px;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums;line-height:1.35}',
     '.tm-ex{font-size:10px;color:rgba(255,255,255,.75);margin-top:5px;line-height:1.5}',
     '.tm-cell.tm-dk .tm-lbl{text-shadow:0 1px 3px rgba(255,255,255,.5)}',
-    '.tm-cell.tm-dk .tm-nm{color:rgba(16,20,26,.92)}',
+    '.tm-cell.tm-dk .tm-nm{color:#000}', /* 不透明纯黑：消除切换边界处白/深字均 <4.5:1 的 WCAG 死区 */
     '.tm-cell.tm-dk .tm-pv{color:rgba(16,20,26,.85)}',
     '.tm-cell.tm-dk .tm-ex{color:rgba(16,20,26,.78)}',
     '.tm-cell.tm-xs .tm-lbl{padding:0 2px}',

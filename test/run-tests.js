@@ -14,12 +14,10 @@
  */
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
 const Treemap = require('../treemap.js');
 const U = Treemap.utils;
 
-const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'heatmap.json'), 'utf-8'));
+const data = require('../data.js');
 
 let passed = 0, failed = 0;
 function test(name, fn) {
@@ -71,8 +69,8 @@ for (const [W, H] of SIZES) {
     }
   });
 }
-test('squarify 子概念层（最大类目 消费 15 概念）不变量', () => {
-  const cat = data.categories.find(c => c.name === '消费');
+test('squarify 子概念层不变量（子概念最多的大类）', () => {
+  const cat = data.categories.reduce((a, b) => (b.concepts.length > a.concepts.length ? b : a));
   const { rects } = U.squarifyLayout(conceptItems(cat), 0, 0, 600, 400);
   let sum = 0;
   Object.values(rects).forEach(r => { sum += r.w * r.h; });
@@ -164,13 +162,13 @@ test('大类层最差宽高比 ≤ 6（1600x900）', () => {
   console.log(`        （实测最差宽高比 ${worst.toFixed(2)}）`);
   assert(worst <= 6, 'worst=' + worst.toFixed(2));
 });
-test('全部 31 个大类的子概念层最差宽高比 ≤ 8（按各自框 600x400 归一）', () => {
+test(`全部 ${data.categories.length} 个大类的子概念层最差宽高比 ≤ 8（按各自框 600x400 归一）`, () => {
   let worstAll = 0;
   for (const cat of data.categories) {
     const { rects } = U.squarifyLayout(conceptItems(cat), 0, 0, 600, 400);
     worstAll = Math.max(worstAll, U.worstAspectRatio(rects));
   }
-  console.log(`        （31 类中最差 ${worstAll.toFixed(2)}）`);
+  console.log(`        （${data.categories.length} 类中最差 ${worstAll.toFixed(2)}）`);
   assert(worstAll <= 8, 'worst=' + worstAll.toFixed(2));
 });
 
@@ -203,7 +201,7 @@ test('扰动后 resquarify 平均 IoU ≥ squarify 重排，且 ≥ 0.85', () =>
 test('键集合变化时 resquarify 安全回退为 squarify', () => {
   const base = catItems('n');
   const rq1 = U.resquarifyLayout(base, 0, 0, 1600, 900, null);
-  const changed = base.slice(0, 20); // 删掉 11 个大类
+  const changed = base.slice(0, Math.ceil(base.length / 2)); // 删掉一半大类 ⇒ 键集合必变
   const rq2 = U.resquarifyLayout(changed, 0, 0, 1600, 900, { rows: rq1.rows });
   assert(rq2.fresh === true, '应回退为全新 squarify');
   let sum = 0;

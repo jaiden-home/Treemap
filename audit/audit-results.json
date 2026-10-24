@@ -1,59 +1,57 @@
 {
-  "file": "heatmap.json",
+  "file": "data.js",
   "meta": {
     "lastDate": "2026-10-23",
-    "prevDate": "2026-10-22",
-    "exportedAt": "2026-10-23T15:06:20.951Z",
-    "stocksEvaluated": 4416,
-    "categories": 31,
-    "concepts": 144,
-    "note": "两级概念热力（大类 → 子概念，一股一概念）：面积=avgPct 当日等权平均涨幅，颜色=up/evalN 涨股比，leader=成分涨幅第一；大类按 concepts.sort 展示序、子概念按 avgPct 降序"
+    "stocksEvaluated": 1968,
+    "categories": 18,
+    "concepts": 180,
+    "note": "示例数据（虚构，仅用于演示插件与回归测试，非真实行情）"
   },
   "checks": [
     {
       "id": "A1",
       "name": "大类 n == Σ 子概念 n（成分不重不漏）",
       "ok": true,
-      "detail": "31/31 大类一致"
+      "detail": "18/18 大类一致"
     },
     {
       "id": "A2",
       "name": "大类 up == Σ 子概念 up",
       "ok": true,
-      "detail": "31/31 大类一致"
+      "detail": "18/18 大类一致"
     },
     {
       "id": "A3",
       "name": "大类 evalN == Σ 子概念 evalN",
       "ok": true,
-      "detail": "31/31 大类一致"
+      "detail": "18/18 大类一致"
     },
     {
       "id": "A4",
       "name": "大类 avgPct ≈ 按 n 加权还原值（容差 0.01 = 两位小数舍入）",
       "ok": true,
-      "detail": "最大偏差 0.0062 @「基建」（>0.01 说明大类均值非由这些子概念等权聚合而来）"
+      "detail": "最大偏差 0.0044 @「汽车」（>0.01 说明大类均值非由这些子概念等权聚合而来）"
     },
     {
       "id": "A5",
       "name": "大类领涨股必为某子概念领涨股（一股一概念的必然推论）",
       "ok": true,
-      "detail": "31/31 一致"
+      "detail": "18/18 一致"
     },
     {
       "id": "A6a",
-      "name": "Σ 大类 n (4408) == meta.stocksEvaluated (4416)",
-      "ok": false,
-      "detail": "存在未纳入概念体系的已评估股票"
+      "name": "Σ 大类 n (1968) == meta.stocksEvaluated (1968)",
+      "ok": true,
+      "detail": "覆盖率口径自洽：一股一概念且全部纳入"
     },
     {
       "id": "A6b",
-      "name": "大类计数 31 == meta.categories (31)",
+      "name": "大类计数 18 == meta.categories (18)",
       "ok": true
     },
     {
       "id": "A6c",
-      "name": "子概念计数 144 == meta.concepts (144)",
+      "name": "子概念计数 180 == meta.concepts (180)",
       "ok": true
     },
     {
@@ -80,331 +78,195 @@
       "detail": ""
     }
   ],
-  "issues": [
-    {
-      "id": "A6a",
-      "name": "Σ 大类 n (4408) == meta.stocksEvaluated (4416)",
-      "detail": "存在未纳入概念体系的已评估股票"
-    }
-  ],
+  "issues": [],
   "perCat": [
     {
+      "name": "软件开发",
+      "n": 185,
+      "sumN": 185,
+      "up": 97,
+      "sumUp": 97,
+      "avgPct": 0.62,
+      "weightedAvg": 0.62,
+      "dev": 0.0016
+    },
+    {
       "name": "半导体",
-      "n": 72,
-      "sumN": 72,
-      "up": 62,
-      "sumUp": 62,
-      "avgPct": 2.47,
-      "weightedAvg": 2.47,
-      "dev": 0.0028
+      "n": 108,
+      "sumN": 108,
+      "up": 49,
+      "sumUp": 49,
+      "avgPct": -0.68,
+      "weightedAvg": -0.68,
+      "dev": 0.0043
     },
     {
-      "name": "芯片",
-      "n": 88,
-      "sumN": 88,
-      "up": 63,
-      "sumUp": 63,
-      "avgPct": 1.35,
-      "weightedAvg": 1.35,
-      "dev": 0.0027
+      "name": "通用设备",
+      "n": 138,
+      "sumN": 138,
+      "up": 64,
+      "sumUp": 64,
+      "avgPct": 0.96,
+      "weightedAvg": 0.96,
+      "dev": 0.0041
     },
     {
-      "name": "消费电子",
-      "n": 175,
-      "sumN": 175,
-      "up": 156,
-      "sumUp": 156,
-      "avgPct": 2.88,
-      "weightedAvg": 2.88,
-      "dev": 0.002
-    },
-    {
-      "name": "人工智能",
-      "n": 83,
-      "sumN": 83,
-      "up": 72,
-      "sumUp": 72,
-      "avgPct": 2.25,
-      "weightedAvg": 2.25,
-      "dev": 0.0049
-    },
-    {
-      "name": "软件",
-      "n": 175,
-      "sumN": 175,
-      "up": 153,
-      "sumUp": 153,
-      "avgPct": 3.5,
-      "weightedAvg": 3.5,
-      "dev": 0.0024
-    },
-    {
-      "name": "国产替代",
-      "n": 49,
-      "sumN": 49,
-      "up": 41,
-      "sumUp": 41,
-      "avgPct": 1.58,
-      "weightedAvg": 1.58,
-      "dev": 0.0029
-    },
-    {
-      "name": "智能制造",
-      "n": 203,
-      "sumN": 203,
-      "up": 191,
-      "sumUp": 191,
-      "avgPct": 3.83,
-      "weightedAvg": 3.83,
-      "dev": 0.002
-    },
-    {
-      "name": "消费",
-      "n": 423,
-      "sumN": 423,
-      "up": 342,
-      "sumUp": 342,
-      "avgPct": 1.51,
-      "weightedAvg": 1.51,
-      "dev": 0.0017
-    },
-    {
-      "name": "文化娱乐",
-      "n": 120,
-      "sumN": 120,
-      "up": 93,
-      "sumUp": 93,
-      "avgPct": 2.47,
-      "weightedAvg": 2.48,
-      "dev": 0.0056
-    },
-    {
-      "name": "生活服务",
-      "n": 16,
-      "sumN": 16,
-      "up": 13,
-      "sumUp": 13,
-      "avgPct": 1.63,
-      "weightedAvg": 1.63,
-      "dev": 0
-    },
-    {
-      "name": "创新药",
-      "n": 179,
-      "sumN": 179,
-      "up": 140,
-      "sumUp": 140,
-      "avgPct": 1.25,
-      "weightedAvg": 1.25,
+      "name": "医药",
+      "n": 115,
+      "sumN": 115,
+      "up": 48,
+      "sumUp": 48,
+      "avgPct": -0.07,
+      "weightedAvg": -0.07,
       "dev": 0.0023
     },
     {
-      "name": "医疗",
-      "n": 190,
-      "sumN": 190,
-      "up": 151,
-      "sumUp": 151,
-      "avgPct": 1.64,
-      "weightedAvg": 1.64,
-      "dev": 0.0036
-    },
-    {
-      "name": "金融类",
-      "n": 155,
-      "sumN": 155,
-      "up": 115,
-      "sumUp": 115,
-      "avgPct": 1.8,
-      "weightedAvg": 1.81,
-      "dev": 0.0059
-    },
-    {
-      "name": "资源",
-      "n": 67,
-      "sumN": 67,
-      "up": 59,
-      "sumUp": 59,
-      "avgPct": 1.57,
-      "weightedAvg": 1.57,
-      "dev": 0.0034
-    },
-    {
-      "name": "能源",
-      "n": 193,
-      "sumN": 193,
-      "up": 118,
-      "sumUp": 118,
-      "avgPct": 0.28,
-      "weightedAvg": 0.28,
-      "dev": 0.0047
-    },
-    {
-      "name": "基建",
-      "n": 163,
-      "sumN": 163,
-      "up": 104,
-      "sumUp": 104,
-      "avgPct": 0.47,
-      "weightedAvg": 0.48,
-      "dev": 0.0062
-    },
-    {
-      "name": "制造",
-      "n": 353,
-      "sumN": 353,
-      "up": 322,
-      "sumUp": 322,
-      "avgPct": 2.92,
-      "weightedAvg": 2.92,
-      "dev": 0.001
-    },
-    {
-      "name": "军工",
-      "n": 105,
-      "sumN": 105,
-      "up": 91,
-      "sumUp": 91,
-      "avgPct": 1.38,
-      "weightedAvg": 1.38,
-      "dev": 0.0047
-    },
-    {
-      "name": "社会服务",
-      "n": 80,
-      "sumN": 80,
-      "up": 47,
-      "sumUp": 47,
-      "avgPct": 0.37,
-      "weightedAvg": 0.37,
-      "dev": 0.0019
-    },
-    {
-      "name": "环保",
-      "n": 123,
-      "sumN": 123,
-      "up": 93,
-      "sumUp": 93,
-      "avgPct": 0.83,
-      "weightedAvg": 0.83,
-      "dev": 0.0011
-    },
-    {
-      "name": "光伏",
-      "n": 53,
-      "sumN": 53,
-      "up": 45,
-      "sumUp": 45,
-      "avgPct": 1.28,
-      "weightedAvg": 1.28,
+      "name": "银行",
+      "n": 111,
+      "sumN": 111,
+      "up": 77,
+      "sumUp": 77,
+      "avgPct": 0.61,
+      "weightedAvg": 0.61,
       "dev": 0.0004
     },
     {
-      "name": "基础化工",
-      "n": 323,
-      "sumN": 323,
-      "up": 246,
-      "sumUp": 246,
-      "avgPct": 0.8,
-      "weightedAvg": 0.8,
-      "dev": 0.0028
+      "name": "电力",
+      "n": 94,
+      "sumN": 94,
+      "up": 37,
+      "sumUp": 37,
+      "avgPct": 0.36,
+      "weightedAvg": 0.36,
+      "dev": 0.0024
+    },
+    {
+      "name": "汽车",
+      "n": 123,
+      "sumN": 123,
+      "up": 58,
+      "sumUp": 58,
+      "avgPct": 0.64,
+      "weightedAvg": 0.64,
+      "dev": 0.0044
+    },
+    {
+      "name": "食品饮料",
+      "n": 119,
+      "sumN": 119,
+      "up": 53,
+      "sumUp": 53,
+      "avgPct": 1.68,
+      "weightedAvg": 1.68,
+      "dev": 0.0018
+    },
+    {
+      "name": "电子元件",
+      "n": 93,
+      "sumN": 93,
+      "up": 46,
+      "sumUp": 46,
+      "avgPct": -1.73,
+      "weightedAvg": -1.73,
+      "dev": 0.0041
     },
     {
       "name": "有色金属",
-      "n": 70,
-      "sumN": 70,
+      "n": 108,
+      "sumN": 108,
+      "up": 49,
+      "sumUp": 49,
+      "avgPct": 0.77,
+      "weightedAvg": 0.77,
+      "dev": 0.0036
+    },
+    {
+      "name": "基础化工",
+      "n": 121,
+      "sumN": 121,
       "up": 62,
       "sumUp": 62,
-      "avgPct": 1.35,
-      "weightedAvg": 1.35,
-      "dev": 0.0029
+      "avgPct": 1.85,
+      "weightedAvg": 1.85,
+      "dev": 0.0001
     },
     {
-      "name": "房地产建筑",
-      "n": 148,
-      "sumN": 148,
-      "up": 117,
-      "sumUp": 117,
-      "avgPct": 1.19,
-      "weightedAvg": 1.19,
-      "dev": 0.0049
+      "name": "交通运输",
+      "n": 115,
+      "sumN": 115,
+      "up": 65,
+      "sumUp": 65,
+      "avgPct": -0.01,
+      "weightedAvg": -0.01,
+      "dev": 0.0033
     },
     {
-      "name": "交运物流",
-      "n": 120,
-      "sumN": 120,
-      "up": 79,
-      "sumUp": 79,
-      "avgPct": 0.63,
-      "weightedAvg": 0.63,
-      "dev": 0.0003
+      "name": "传媒",
+      "n": 99,
+      "sumN": 99,
+      "up": 28,
+      "sumUp": 28,
+      "avgPct": 0.28,
+      "weightedAvg": 0.28,
+      "dev": 0.0012
     },
     {
-      "name": "纺织服饰",
-      "n": 83,
-      "sumN": 83,
-      "up": 63,
-      "sumUp": 63,
-      "avgPct": 1.36,
-      "weightedAvg": 1.36,
-      "dev": 0.002
+      "name": "通信",
+      "n": 108,
+      "sumN": 108,
+      "up": 53,
+      "sumUp": 53,
+      "avgPct": 1.39,
+      "weightedAvg": 1.39,
+      "dev": 0.0016
     },
     {
-      "name": "轻工制造",
-      "n": 131,
-      "sumN": 131,
-      "up": 98,
-      "sumUp": 98,
-      "avgPct": 1.37,
-      "weightedAvg": 1.37,
-      "dev": 0.0011
+      "name": "农牧饲料",
+      "n": 70,
+      "sumN": 70,
+      "up": 51,
+      "sumUp": 51,
+      "avgPct": 2.14,
+      "weightedAvg": 2.14,
+      "dev": 0.0039
     },
     {
-      "name": "通用制造",
-      "n": 349,
-      "sumN": 349,
-      "up": 291,
-      "sumUp": 291,
-      "avgPct": 1.87,
-      "weightedAvg": 1.87,
-      "dev": 0.0031
+      "name": "煤炭",
+      "n": 91,
+      "sumN": 91,
+      "up": 75,
+      "sumUp": 75,
+      "avgPct": 0.12,
+      "weightedAvg": 0.12,
+      "dev": 0.0024
     },
     {
-      "name": "旅游酒店餐饮",
-      "n": 32,
-      "sumN": 32,
-      "up": 27,
-      "sumUp": 27,
-      "avgPct": 1.13,
-      "weightedAvg": 1.13,
-      "dev": 0.005
+      "name": "房地产",
+      "n": 99,
+      "sumN": 99,
+      "up": 43,
+      "sumUp": 43,
+      "avgPct": 0.29,
+      "weightedAvg": 0.29,
+      "dev": 0.0005
     },
     {
-      "name": "专业服务",
-      "n": 65,
-      "sumN": 65,
-      "up": 50,
-      "sumUp": 50,
-      "avgPct": 1.09,
-      "weightedAvg": 1.09,
-      "dev": 0.0015
-    },
-    {
-      "name": "农业",
-      "n": 22,
-      "sumN": 22,
-      "up": 11,
-      "sumUp": 11,
-      "avgPct": -0.35,
-      "weightedAvg": -0.35,
-      "dev": 0.0009
+      "name": "钢铁",
+      "n": 71,
+      "sumN": 71,
+      "up": 24,
+      "sumUp": 24,
+      "avgPct": 2.15,
+      "weightedAvg": 2.15,
+      "dev": 0.003
     }
   ],
   "summary": {
     "totalChecks": 12,
-    "passed": 11,
-    "maxAvgDeviation": 0.0062,
-    "maxAvgDeviationAt": "基建",
-    "totalStocksInCategories": 4408,
-    "issues": 1
+    "passed": 12,
+    "maxAvgDeviation": 0.0044,
+    "maxAvgDeviationAt": "汽车",
+    "totalStocksInCategories": 1968,
+    "issues": 0
   }
 }

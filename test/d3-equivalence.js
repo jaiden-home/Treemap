@@ -9,13 +9,11 @@
  */
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
 const d3 = require('d3-hierarchy');
 const Treemap = require('../treemap.js');
 const U = Treemap.utils;
 
-const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'heatmap.json'), 'utf-8'));
+const data = require('../data.js');
 const TOL = 0.5; // 题目要求容差 < 0.5px
 
 let passed = 0, failed = 0;

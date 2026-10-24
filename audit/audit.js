@@ -1,5 +1,5 @@
 /*
- * audit/audit.js — heatmap.json 聚合一致性审计（node audit/audit.js）
+ * audit/audit.js — data.js 聚合一致性审计（node audit/audit.js）
  *
  * 题目要求：无逐股原始数据时，对既有聚合数据做可复核的一致性审计。
  * 依据 meta.note 的口径："一股一概念"（每只股票恰好归属一个子概念），因此：
@@ -16,9 +16,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'heatmap.json'), 'utf-8'));
+const data = require('../data.js');
 
-const results = { file: 'heatmap.json', meta: data.meta, checks: [], issues: [] };
+const results = { file: 'data.js', meta: data.meta, checks: [], issues: [] };
 function record(id, name, ok, detail) {
   results.checks.push({ id, name, ok, detail });
   const mark = ok ? 'PASS' : 'FAIL';
@@ -52,13 +52,13 @@ for (const cat of data.categories) {
 
   perCat.push({ name: cat.name, n: cat.n, sumN, up: cat.up, sumUp, avgPct: cat.avgPct, weightedAvg: r2(weightedAvg), dev: +dev.toFixed(4) });
 }
-record('A1', '大类 n == Σ 子概念 n（成分不重不漏）', a1, a1 ? '31/31 大类一致' : results.issues.filter(i => i.id === 'A1').length + ' 处不一致');
-record('A2', '大类 up == Σ 子概念 up', a2, a2 ? '31/31 大类一致' : '');
-record('A3', '大类 evalN == Σ 子概念 evalN', a3, a3 ? '31/31 大类一致' : '');
+record('A1', '大类 n == Σ 子概念 n（成分不重不漏）', a1, a1 ? `${data.categories.length}/${data.categories.length} 大类一致` : results.issues.filter(i => i.id === 'A1').length + ' 处不一致');
+record('A2', '大类 up == Σ 子概念 up', a2, a2 ? `${data.categories.length}/${data.categories.length} 大类一致` : '');
+record('A3', '大类 evalN == Σ 子概念 evalN', a3, a3 ? `${data.categories.length}/${data.categories.length} 大类一致` : '');
 record('A4', '大类 avgPct ≈ 按 n 加权还原值（容差 0.01 = 两位小数舍入）',
   maxAvgDev <= 0.01 + 1e-9,
   `最大偏差 ${maxAvgDev.toFixed(4)} @「${maxAvgDevAt}」（>0.01 说明大类均值非由这些子概念等权聚合而来）`);
-record('A5', '大类领涨股必为某子概念领涨股（一股一概念的必然推论）', a5, a5 ? '31/31 一致' : '');
+record('A5', '大类领涨股必为某子概念领涨股（一股一概念的必然推论）', a5, a5 ? `${data.categories.length}/${data.categories.length} 一致` : '');
 
 /* A6 全局口径 */
 const totalN = data.categories.reduce((s, c) => s + c.n, 0);

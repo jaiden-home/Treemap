@@ -478,6 +478,7 @@
     layout: 'resquarify', // 'resquarify' | 'squarify'
     color: function (d) { return Math.max(0, Math.min(1, ((d.avgPct || 0) + 10) / 20)); }, // 颜色 = 平均涨幅，[-10%,+10%] → [0,1]，0 为灰
     conceptSort: function (a, b) { return (b.avgPct || 0) - (a.avgPct || 0); },
+    categorySort: function (a, b) { return (b.avgPct || 0) - (a.avgPct || 0); },
     tooltip: defaultTooltip
   };
 
@@ -600,16 +601,25 @@
     return arr;
   };
 
+  /** 大类预排：与子概念管线一致，categorySort 默认按 avgPct 降序 */
+  Treemap.prototype._categories = function () {
+    var arr = (this._data.categories || []).slice();
+    if (typeof this._opt.categorySort === 'function') arr.sort(this._opt.categorySort);
+    return arr;
+  };
+
   Treemap.prototype._renderAll = function (W, H) {
-    var self = this, opt = this._opt, cats = this._data.categories;
+    var self = this, opt = this._opt, allCats = this._data.categories;
+    var cats = self._categories(); // 预排后的渲染顺序，与子概念管线一致
     var items = cats.map(function (c, i) { return { key: c.name || ('cat' + i), value: self._weight(c) }; });
     var laid = this._layoutLevel('root', items, 0, 0, W, H);
     var cellFrag = document.createDocumentFragment();
     var frameFrag = document.createDocumentFragment();
     var delay = 0;
 
-    cats.forEach(function (cat, ci) {
-      var r = laid.rects[items[ci].key];
+    cats.forEach(function (cat, si) {
+      var ci = allCats.indexOf(cat); // 原始索引，供 zoom / dataset 使用
+      var r = laid.rects[items[si].key];
       if (!r || r.w < 6 || r.h < 6) return;
 
       /* g：模块间隙 inset（相邻模块间距 = 2g） */

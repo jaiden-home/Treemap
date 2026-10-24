@@ -35,6 +35,14 @@
     padding: 2px 8px; border-radius: 999px; white-space: nowrap;
   }
   .hd-right { display: flex; align-items: flex-end; gap: 18px; }
+  .views { display: flex; gap: 2px; background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 9px; padding: 3px; }
+  .views button {
+    background: transparent; border: 0; border-radius: 6px; color: var(--muted);
+    font-family: inherit; font-size: 12px; padding: 4px 12px; cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .views button:hover { color: var(--txt); background: rgba(255,255,255,.08); }
+  .views button.on { background: rgba(255,255,255,.18); color: var(--txt); font-weight: 700; }
   .legend { min-width: 190px; }
   .lg-title { font-size: 10px; color: var(--muted); margin-bottom: 4px; letter-spacing: 1px; }
   .lg-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgb(0,100,0) 0%, rgb(101,137,90) 25%, rgb(172,172,172) 50%, rgb(206,115,114) 75%, rgb(220,20,60) 100%); }
@@ -61,6 +69,12 @@
     <div class="meta" id="meta"></div>
   </div>
   <div class="hd-right">
+    <div class="views" id="views">
+      <button data-p="day" class="on">日</button>
+      <button data-p="week">周</button>
+      <button data-p="month">月</button>
+      <button data-p="year">年</button>
+    </div>
     <div class="legend">
       <div class="lg-title">颜色 = 平均涨幅（±10% 封顶）</div>
       <div class="lg-bar"></div>
@@ -83,9 +97,23 @@
   var backBtn = document.getElementById('backBtn');
   var crumbText = document.getElementById('crumbText');
 
-  /* 单一数据源：data.js（file:// 直开同样可用，无需内嵌副本） */
+  /* 单一数据源：data.js（file:// 直开同样可用，无需内嵌副本）
+     sets = { day, week, month, year }，周/月/年由日视图确定性派生 */
   var data = window.HEATMAP_DATA;
   var m = data.meta;
+  var sets = data.periods || { day: data };
+  var metaEl = document.getElementById('meta');
+
+  function renderMeta(set) {
+    var mm = set.meta;
+    metaEl.innerHTML =
+      '<span>' + mm.periodName + '视图 · ' + mm.periodRange + '</span>' +
+      '<span>截至 ' + mm.lastDate + '</span>' +
+      '<span>' + mm.stocksEvaluated + ' 只个股</span>' +
+      '<span>' + mm.categories + ' 大类</span>' +
+      '<span>' + mm.concepts + ' 概念</span>' +
+      '<span>数据源 data.js（示例数据）</span>';
+  }
 
   function fmtPct(v) { return (v > 0 ? '+' : '') + v.toFixed(2) + '%'; }
 
@@ -104,22 +132,33 @@
     }
   }
 
-  document.getElementById('meta').innerHTML =
-    '<span>' + m.lastDate + '</span>' +
-    '<span>' + m.stocksEvaluated + ' 只个股</span>' +
-    '<span>' + m.categories + ' 大类</span>' +
-    '<span>' + m.concepts + ' 概念</span>' +
-    '<span>数据源 data.js（示例数据）</span>';
-
   /* 像 D3 一样使用插件：Treemap(容器).data(数据).on(事件).render() */
   var chart = Treemap('#plot')
-    .data(data)
+    .data(sets.day)
     .on('zoom', function (cat) { chrome(cat); })
     .on('back', function () { chrome(null); })
     .render();
 
   backBtn.addEventListener('click', function () { chart.back(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') chart.back(); });
+
+  /* 日 / 周 / 月 / 年视图切换：同一概念体系，仅数据口径不同。
+     键集合不变 ⇒ resquarify 复用行划分，切换周期时格子位置保持稳定 */
+  var viewBtns = Array.prototype.slice.call(document.querySelectorAll('#views button'));
+  function setPeriod(key) {
+    var set = sets[key];
+    if (!set || set === chart.data()) return;
+    viewBtns.forEach(function (b) { b.classList.toggle('on', b.dataset.p === key); });
+    var zoomed = chart.zoomed(); // 切换周期保持当前放大状态（大类顺序各周期一致）
+    chart.data(set).render();
+    renderMeta(set);
+    chrome(zoomed ? set.categories.filter(function (c) { return c.name === zoomed.name; })[0] : null);
+  }
+  viewBtns.forEach(function (b) {
+    b.addEventListener('click', function () { setPeriod(b.dataset.p); });
+  });
+
+  renderMeta(sets.day);
   chrome(null);
 })();
 </script>

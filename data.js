@@ -9,6 +9,8 @@
  *   大类 n/up/evalN == Σ 子概念；avgPct == Σ(子概念 avgPct×n)/Σn（两位小数舍入）；
  *   大类 leader 必为某子概念 leader；Σ n == meta.stocksEvaluated；code 全局唯一。
  *   口径：18 大类 · 180 子概念 · 1968 只个股。
+ *   周期视图：HEATMAP_DATA.periods = { day, week, month, year }，周/月/年由日视图
+ *   确定性派生（mulberry32 种子 = hash(code@period)），同样满足全部聚合不变量。
  *
  * 浏览器：<script src="data.js"> → window.HEATMAP_DATA
  * Node：  require('./data.js')
@@ -18,7 +20,7 @@
   else root.HEATMAP_DATA = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
-  return {
+  var DAY = {
   "meta": {
     "lastDate": "2026-10-23",
     "stocksEvaluated": 1968,
@@ -2621,4 +2623,75 @@
     }
   ]
 };
+
+  /* ================================================================
+   * 周 / 月 / 年视图 — 由日视图确定性派生（示例数据，种子 = hash(code@period)）
+   * 保持 audit/audit.js 全部不变量：
+   *   n/evalN 不变；up 与 avgPct 按 seed 重采样；大类聚合 = Σ 子概念；
+   *   大类 leader = 子概念 leader 中 pct 最大者；leader.pct ≥ avgPct；|值| ≤ 20。
+   * 挂载为 DAY.periods = { day, week, month, year }（day 即本对象）
+   * ================================================================ */
+  function hash(str) {
+    var h = 5381;
+    for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0;
+    return h;
+  }
+  function mulberry32(seed) {
+    var t = seed >>> 0;
+    return function () {
+      t = (t + 0x6D2B79F5) >>> 0;
+      var r = Math.imul(t ^ (t >>> 15), 1 | t);
+      r = (r ^ (r + Math.imul(r ^ (r >>> 7), 61 | r))) >>> 0;
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function r2(x) { return Math.round(x * 100) / 100; }
+  function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
+
+  /* persist：与日视图的相关性（周期越长，当日行情解释力越弱）；amp：漂移幅度 */
+  var PERIOD_DEFS = [
+    { key: 'week',  name: '周', range: '近 5 个交易日',   persist: 0.7,  amp: 3.2 },
+    { key: 'month', name: '月', range: '近 21 个交易日',  persist: 0.55, amp: 4.4 },
+    { key: 'year',  name: '年', range: '近 244 个交易日', persist: 0.35, amp: 5.8 }
+  ];
+
+  function derivePeriod(p) {
+    var cats = DAY.categories.map(function (cat) {
+      var concepts = cat.concepts.map(function (cp) {
+        var rng = mulberry32(hash(cp.code + '@' + p.key));
+        var avg = r2(clamp(cp.avgPct * p.persist + (rng() * 2 - 1) * p.amp, -9.9, 9.9));
+        var share = clamp(0.5 + avg / 14 + (rng() - 0.5) * 0.2, 0.02, 0.98);
+        var pct = r2(clamp(avg + 1.8 + rng() * 8, -19.9, 19.9));
+        return {
+          code: cp.code, name: cp.name, n: cp.n,
+          up: Math.round(share * cp.n), evalN: cp.n,
+          avgPct: avg,
+          leader: { code: cp.leader.code, name: cp.leader.name, pct: pct }
+        };
+      });
+      var n = 0, up = 0, ws = 0, best = null;
+      concepts.forEach(function (c) {
+        n += c.n; up += c.up; ws += c.avgPct * c.n;
+        if (!best || c.leader.pct > best.pct) best = c.leader;
+      });
+      return {
+        name: cat.name, n: n, up: up, evalN: n,
+        avgPct: r2(ws / n),
+        leader: { code: best.code, name: best.name, pct: best.pct },
+        concepts: concepts
+      };
+    });
+    var meta = {};
+    Object.keys(DAY.meta).forEach(function (k) { meta[k] = DAY.meta[k]; });
+    meta.period = p.key; meta.periodName = p.name; meta.periodRange = p.range;
+    return { meta: meta, categories: cats };
+  }
+
+  DAY.meta.period = 'day';
+  DAY.meta.periodName = '日';
+  DAY.meta.periodRange = '当日';
+  DAY.periods = { day: DAY };
+  PERIOD_DEFS.forEach(function (p) { DAY.periods[p.key] = derivePeriod(p); });
+
+  return DAY;
 });

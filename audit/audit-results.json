@@ -5,7 +5,10 @@
     "stocksEvaluated": 1968,
     "categories": 18,
     "concepts": 180,
-    "note": "示例数据（虚构，仅用于演示插件与回归测试，非真实行情）"
+    "note": "示例数据（虚构，仅用于演示插件与回归测试，非真实行情）",
+    "period": "day",
+    "periodName": "日",
+    "periodRange": "当日"
   },
   "checks": [
     {

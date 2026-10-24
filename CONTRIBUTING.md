@@ -6,7 +6,7 @@ everything you need to contribute effectively.
 ## Development setup
 
 ```bash
-git clone https://github.com/jaiden/treemap-heatmap.git
+git clone https://github.com/jaiden-home/treemap-heatmap.git
 cd treemap-heatmap
 npm install
 npm test       # runs the full suite (layout, color, stats, data, d3 equivalence)

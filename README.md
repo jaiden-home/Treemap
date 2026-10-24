@@ -1,6 +1,6 @@
 # treemap-heatmap
 
-[![CI](https://github.com/jaiden/treemap-heatmap/actions/workflows/ci.yml/badge.svg)](https://github.com/jaiden/treemap-heatmap/actions/workflows/ci.yml)
+[![CI](https://github.com/jaiden-home/treemap-heatmap/actions/workflows/ci.yml/badge.svg)](https://github.com/jaiden-home/treemap-heatmap/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/treemap-heatmap.svg)](https://www.npmjs.com/package/treemap-heatmap)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 

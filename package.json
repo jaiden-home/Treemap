@@ -42,11 +42,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jaiden/treemap-heatmap.git"
+    "url": "git+https://github.com/jaiden-home/treemap-heatmap.git"
   },
-  "homepage": "https://github.com/jaiden/treemap-heatmap#readme",
+  "homepage": "https://github.com/jaiden-home/treemap-heatmap#readme",
   "bugs": {
-    "url": "https://github.com/jaiden/treemap-heatmap/issues"
+    "url": "https://github.com/jaiden-home/treemap-heatmap/issues"
   },
   "license": "MIT",
   "engines": {

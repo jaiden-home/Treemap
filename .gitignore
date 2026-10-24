@@ -1,4 +1,12 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# environment & caches
 .idea/
 .DS_Store
 .trae-html-share-packages/
-node_modules/
+coverage/
+*.log

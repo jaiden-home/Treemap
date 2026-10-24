@@ -1,0 +1,4 @@
+dist/
+node_modules/
+demo/data.js
+package-lock.json

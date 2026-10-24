@@ -1,0 +1,71 @@
+{
+  "name": "treemap-heatmap",
+  "version": "1.0.0",
+  "description": "Zero-dependency grouped treemap engine with a perceptually uniform diverging color scale, d3-equivalent squarify/resquarify layout, WCAG AA adaptive labels and drill-down zoom.",
+  "type": "module",
+  "main": "./dist/treemap-heatmap.cjs",
+  "module": "./src/index.js",
+  "types": "./types/index.d.ts",
+  "unpkg": "./dist/treemap-heatmap.min.js",
+  "jsdelivr": "./dist/treemap-heatmap.min.js",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./src/index.js",
+      "require": "./dist/treemap-heatmap.cjs",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src",
+    "dist",
+    "types",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "treemap",
+    "heatmap",
+    "squarify",
+    "resquarify",
+    "d3",
+    "visualization",
+    "dataviz",
+    "color",
+    "cielab",
+    "wcag",
+    "accessibility",
+    "wilson-interval",
+    "zero-dependency"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaiden/treemap-heatmap.git"
+  },
+  "homepage": "https://github.com/jaiden/treemap-heatmap#readme",
+  "bugs": {
+    "url": "https://github.com/jaiden/treemap-heatmap/issues"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "test": "node --test",
+    "lint": "eslint src test demo/app.js rollup.config.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepublishOnly": "npm run lint && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "d3-hierarchy": "^3.1.2",
+    "eslint": "^10.13.0",
+    "prettier": "^3.3.3",
+    "rollup": "^4.24.0"
+  }
+}

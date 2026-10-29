@@ -1,6 +1,6 @@
 {
   "name": "treemap-heatmap",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Zero-dependency grouped treemap engine with a perceptually uniform diverging color scale, d3-equivalent squarify/resquarify layout, WCAG AA adaptive labels and drill-down zoom.",
   "type": "module",
   "main": "./dist/treemap-heatmap.cjs",

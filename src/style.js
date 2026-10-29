@@ -37,6 +37,8 @@ const CSS = [
   '.tm-tip .tm-tc{font-size:10px;color:#9aa0aa;font-weight:400}',
   '.tm-tip .tm-tr{display:flex;justify-content:space-between;gap:18px;color:#9aa0aa}',
   '.tm-tip .tm-tr b{color:#e8eaed;font-weight:600;font-variant-numeric:tabular-nums}',
+  '.tm-tip .tm-up{color:#e84855}', // scale red endpoint
+  '.tm-tip .tm-down{color:#2aa598}', // scale teal hue, lightened for dark tooltip bg
 ].join('\n');
 
 export function injectStyle() {

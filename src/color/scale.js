@@ -1,21 +1,22 @@
 // Perceptually uniform diverging color scale in CIE LCh space.
 //
 //   ratio 0.5 -> neutral gray anchor (#ACACAC)
-//   ratio 1.0 -> saturated red   (L*=47, C=78.5, h=25.3)
-//   ratio 0.0 -> saturated green (L*=36.2, C=60.3, h=136)
+//   ratio 1.0 -> saturated red   (L*=54.5, C=68.2, h=24.7)  ~ #E84855
+//   ratio 0.0 -> saturated teal  (L*=49, C=34, h=180)       ~ #058373
 //
 // L and C are interpolated linearly at a fixed hue, which is linear in Lab and
 // therefore perceptually uniform. The endpoints intentionally differ in
-// lightness (47 vs 36) so the direction remains readable under color-vision
-// deficiency (see cvd.js and the test suite).
+// lightness (54.5 vs 49) so the direction remains readable under color-vision
+// deficiency (see cvd.js and the test suite); the teal end sits dark enough
+// that the adaptive label rule still gets white-text cells (WCAG AA).
 
 import { lchToRgbClamped, rgbToLab } from './convert.js';
 import { contrastRatio, relativeLuminance, isLightBg } from './contrast.js';
 
 export const SCALE = {
   mid: { L: 70.3, C: 0 }, // #ACACAC
-  red: { L: 47, C: 78.5, H: 25.3 }, // #DC143C
-  green: { L: 36.2, C: 60.3, H: 136 }, // #006400
+  red: { L: 54.5, C: 68.2, H: 24.7 }, // #E84855
+  green: { L: 49, C: 34, H: 180 }, // #058373
 };
 
 /** Map a [0,1] ratio to an sRGB triple on the diverging scale. */

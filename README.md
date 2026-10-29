@@ -140,10 +140,10 @@ demo dataset with ±10% value perturbation: mean IoU **0.89** (resquarify) vs
 **0.47** (squarify) — cells stay put.
 
 **Why the scale is not a simple gradient.** The diverging scale interpolates
-lightness and chroma linearly in CIE LCh at fixed hues (red `#DC143C`,
-neutral `#ACACAC`, green `#006400`), which is perceptually uniform by
+lightness and chroma linearly in CIE LCh at fixed hues (red `#E84855`,
+neutral `#ACACAC`, teal `#058373`), which is perceptually uniform by
 construction. Out-of-gamut stops are pulled back by bisecting chroma. The two
-endpoints deliberately differ in lightness (L\* 47 vs 36) so direction
+endpoints deliberately differ in lightness (L\* 54.5 vs 49) so direction
 survives color-vision deficiency; the test suite verifies ΔE76 between the
 simulated endpoints stays clearly distinguishable.
 

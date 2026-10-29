@@ -5,6 +5,27 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-10-29
+
+### Changed
+
+- Diverging scale endpoints retuned to the product design direction: red end
+  `#DC143C` → `#E84855`, green end `#006400` → teal `#058373` (LCh h=180),
+  neutral anchor unchanged. All color-science guarantees are preserved and
+  still regression-tested: perceptual monotonicity, 101-point WCAG AA sweep,
+  and CVD distinguishability under deuteranopia/protanopia simulation.
+
+### Added
+
+- `.tm-up` / `.tm-down` tooltip value classes (documented since 1.0.0, now
+  actually defined): red / teal text inside the dark tooltip.
+
+### Demo
+
+- Fixture replaced with real 2026-10-28 period data: day/week/month/year are
+  now genuine range aggregates from `heatmap-periods.json` (previously
+  week/month/year were deterministically derived from the day view).
+
 ## [1.0.1] - 2026-10-25
 
 ### Fixed

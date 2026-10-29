@@ -18,7 +18,7 @@
   }
 
   /* Single data source: demo/data.js. periods = { day, week, month, year };
-     week/month/year are deterministically derived from the day view. */
+     all four are real range aggregates exported from heatmap-periods.json. */
   var data = HEATMAP_DATA;
   var m = data.meta;
   var sets = data.periods || { day: data };
@@ -129,7 +129,7 @@
       '<span>' +
       mm.concepts +
       ' 概念</span>' +
-      '<span>数据源 demo/data.js（真实收盘快照；周/月/年为演示派生）</span>';
+      '<span>数据源 demo/data.js（真实收盘快照；日/周/月/年为真实区间统计）</span>';
   }
 
   function chrome(cat) {
